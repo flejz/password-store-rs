@@ -35,6 +35,20 @@ cargo build --release
 
 Place the binary somewhere on your `PATH`.
 
+### Windows notes
+
+**Building from source:** requires the MSVC toolchain (`rustup target add x86_64-pc-windows-msvc`). If you have Git for Windows installed, its `link.exe` may shadow the MSVC linker. The included `.cargo/config.toml` pins the correct linker path for Gpg4win installs — adjust it if your VS install is in a different location.
+
+**Adding to PATH:** copy `pass.exe` to a directory already on your `PATH` (e.g. `C:\Users\<you>\bin`), or add a new folder via *System Properties → Environment Variables*.
+
+**GPG via Scoop:** `scoop install gpg` installs GnuPG and adds it to `PATH` automatically — no manual path configuration needed.
+
+**Store location:** defaults to `%USERPROFILE%\.password-store` (e.g. `C:\Users\<you>\.password-store`). Override with `PASSWORD_STORE_DIR`.
+
+**Clipboard auto-clear:** when using `--clip`, a hidden background process (`pass.exe --internal-clip-clear`) is spawned to clear the clipboard after the timeout. This is intentional — it will appear briefly in Task Manager and then exit.
+
+**Multiline input:** use Ctrl+Z then Enter to signal EOF (instead of Ctrl+D on Unix).
+
 ---
 
 ## Quick start
@@ -100,7 +114,7 @@ If `<name>` is a subfolder, lists its contents.
 Insert a new password. Prompts twice (no echo) by default.
 
 - `--echo` — show typed characters
-- `--multiline` — read until EOF (Ctrl+Z on Windows, Ctrl+D elsewhere)
+- `--multiline` — read until EOF (Ctrl+D on Unix, Ctrl+Z + Enter on Windows)
 - `--force` — overwrite without confirmation
 
 Alias: `add`.
