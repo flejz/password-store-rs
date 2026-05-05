@@ -1,5 +1,6 @@
 pub mod completion;
 pub mod generate;
+pub mod git;
 pub mod grep;
 pub mod init;
 pub mod insert;

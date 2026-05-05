@@ -86,6 +86,12 @@ pub enum Cmd {
         #[arg(long, short = 'f')]
         force: bool,
     },
+    /// Run a git command inside the password store
+    Git {
+        /// git arguments
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
     /// Search inside decrypted password files
     Grep {
         /// grep-compatible arguments: [-i] [-E] [--] <pattern>

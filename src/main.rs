@@ -27,7 +27,7 @@ fn main() -> Result<()> {
     // `pass <name>`, `pass -c <name>`, and `pass <name> --clip` all work.
     const SUBCOMMANDS: &[&str] = &[
         "init", "ls", "list", "show", "insert", "add",
-        "generate", "rm", "delete", "remove", "grep", "completion", "help",
+        "generate", "rm", "delete", "remove", "grep", "git", "completion", "help",
     ];
     let positional: Vec<&str> = raw[1..]
         .iter()
@@ -53,6 +53,8 @@ fn main() -> Result<()> {
         }
 
         Some(Cmd::Completion { shell }) => commands::completion::run(&shell),
+
+        Some(Cmd::Git { args }) => commands::git::run(&store, &args),
 
         Some(Cmd::Grep { args }) => {
             let gpg = Gpg::find(gpg_opts)?;
@@ -82,7 +84,8 @@ fn main() -> Result<()> {
                 }
 
                 // Already handled above; unreachable but needed to exhaust enum
-                Cmd::Ls { .. } | Cmd::Rm { .. } | Cmd::Completion { .. } | Cmd::Grep { .. } => unreachable!(),
+                Cmd::Ls { .. } | Cmd::Rm { .. } | Cmd::Completion { .. }
+                | Cmd::Git { .. } | Cmd::Grep { .. } => unreachable!(),
             }
         }
     }
