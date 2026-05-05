@@ -1,4 +1,4 @@
-# pass-win
+# pass-rs 🦀
 
 A cross-platform Rust implementation of [pass — the standard Unix password manager](https://www.passwordstore.org/) by Jason A. Donenfeld.
 
@@ -196,7 +196,7 @@ git push -u origin master
 
 ## Differences from the original
 
-| Feature | pass (bash) | pass-win |
+| Feature | pass (bash) | pass-rs |
 |---|---|---|
 | Platform | Linux/macOS (bash required) | Windows, macOS, Linux |
 | Clipboard | `xclip` / `wl-clipboard` / `pbcopy` | Native per-platform via `arboard` |
