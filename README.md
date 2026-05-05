@@ -1,40 +1,45 @@
 # pass-win
 
-A native Windows port of [pass — the standard Unix password manager](https://www.passwordstore.org/) by Jason A. Donenfeld, rewritten in Rust.
+A cross-platform Rust implementation of [pass — the standard Unix password manager](https://www.passwordstore.org/) by Jason A. Donenfeld.
 
-The original `pass` is a 700-line bash script that requires MSYS2, Cygwin, or WSL on Windows, plus external tools (`xclip`, `tree`, `gpg`). This port is a single native `.exe` with no shell interpreter required.
+The original `pass` is a 700-line bash script with hard dependencies on MSYS2/Cygwin/WSL, `xclip`, `tree`, and other POSIX tools. This rewrite is a single native binary with no shell interpreter required — works on Windows, macOS, and Linux.
 
-**Store format is fully compatible.** A `.password-store` created on Linux with `pass` opens unchanged here, and vice versa.
+**Store format is fully compatible.** A `.password-store` created with the original `pass` opens unchanged here, and vice versa.
 
 ---
 
 ## Requirements
 
-- [GnuPG for Windows (Gpg4win)](https://gpg4win.org) — provides `gpg.exe`
-- [Git for Windows](https://git-scm.com/download/win) *(optional)* — for auto-commit on changes
+- [GnuPG](https://gnupg.org) — provides `gpg` for encryption/decryption
+  - Windows: [Gpg4win](https://gpg4win.org)
+  - macOS: `brew install gnupg`
+  - Linux: `apt install gnupg` / `pacman -S gnupg`
+- [Git](https://git-scm.com) *(optional)* — for auto-commit on changes
 
-`pass.exe` finds `gpg.exe` automatically via:
+`gpg` is located automatically via:
 1. `PATH`
-2. `C:\Program Files (x86)\GnuPG\bin\gpg.exe` (Gpg4win default)
-3. `C:\Program Files\GnuPG\bin\gpg.exe`
-4. `~\scoop\shims\gpg.exe` (Scoop)
+2. `C:\Program Files (x86)\GnuPG\bin\gpg.exe` (Gpg4win default, Windows only)
+3. `C:\Program Files\GnuPG\bin\gpg.exe` (Windows only)
+4. `~\scoop\shims\gpg.exe` (Scoop, Windows only)
 
 ---
 
 ## Installation
 
-Download the latest release binary and place `pass.exe` somewhere on your `PATH`, or build from source:
+Build from source:
 
-```powershell
+```bash
 cargo build --release
-# Binary: target\release\pass.exe
+# Binary: target/release/pass  (target/release/pass.exe on Windows)
 ```
+
+Place the binary somewhere on your `PATH`.
 
 ---
 
 ## Quick start
 
-```powershell
+```bash
 # Initialize the store with your GPG key
 pass init <your-gpg-key-id>
 
@@ -63,11 +68,11 @@ pass rm email/gmail
 
 ### `pass init <gpg-id>... [--path <subfolder>]`
 
-Initialize the password store. Creates `~\.password-store\.gpg-id` containing the given GPG key ID(s). If passwords already exist, offers to re-encrypt them with the new key(s).
+Initialize the password store. Creates `~/.password-store/.gpg-id` containing the given GPG key ID(s). If passwords already exist, offers to re-encrypt them with the new key(s).
 
 Use `--path` to set a per-subfolder key:
 
-```powershell
+```bash
 pass init --path work/ 0xABCD1234
 ```
 
@@ -95,7 +100,7 @@ If `<name>` is a subfolder, lists its contents.
 Insert a new password. Prompts twice (no echo) by default.
 
 - `--echo` — show typed characters
-- `--multiline` — read until EOF (Ctrl+Z on Windows)
+- `--multiline` — read until EOF (Ctrl+Z on Windows, Ctrl+D elsewhere)
 - `--force` — overwrite without confirmation
 
 Alias: `add`.
@@ -119,7 +124,7 @@ Aliases: `delete`, `remove`.
 
 | Variable | Default | Description |
 |---|---|---|
-| `PASSWORD_STORE_DIR` | `~\.password-store` | Path to the password store |
+| `PASSWORD_STORE_DIR` | `~/.password-store` | Path to the password store |
 | `PASSWORD_STORE_CLIP_TIME` | `45` | Seconds before clipboard is cleared |
 | `PASSWORD_STORE_GPG_OPTS` | *(empty)* | Extra flags passed to `gpg` |
 
@@ -131,9 +136,9 @@ If the store directory contains a `.git` repo, mutating commands (`insert`, `gen
 
 Initialize a git repo in your store:
 
-```powershell
-pass git init
-cd ~\.password-store
+```bash
+cd ~/.password-store
+git init
 git remote add origin <url>
 git push -u origin master
 ```
@@ -154,9 +159,9 @@ git push -u origin master
 
 | Feature | pass (bash) | pass-win |
 |---|---|---|
-| Platform | Linux/macOS/Cygwin | Windows native |
-| Clipboard | `xclip` / `wl-clipboard` | Win32 API (no external tool) |
-| Temp files | `/dev/shm` (RAM) | `%TEMP%` (disk, less secure) |
+| Platform | Linux/macOS (bash required) | Windows, macOS, Linux |
+| Clipboard | `xclip` / `wl-clipboard` / `pbcopy` | Native per-platform via `arboard` |
+| Temp files | `/dev/shm` (RAM) | `$TMPDIR` / `%TEMP%` (disk, less secure) |
 | Extensions | `.bash` scripts | Not yet implemented |
 | Commands | `init ls show insert generate rm mv cp grep find edit git` | `init ls show insert generate rm` (Phase 1) |
 
