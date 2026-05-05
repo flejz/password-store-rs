@@ -11,6 +11,13 @@ pub fn run(
 ) -> Result<()> {
     store.assert_exists()?;
 
+    // Bare "/" or empty → list root (PassFF sends `pass show /` for the root)
+    let name = name.trim_matches('/').trim_matches('\\');
+    if name.is_empty() {
+        tree::print_tree(&store.root, None);
+        return Ok(());
+    }
+
     let pass_file = store.pass_file(name)?;
 
     if !pass_file.exists() {

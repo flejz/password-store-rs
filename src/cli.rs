@@ -82,6 +82,12 @@ pub enum Cmd {
         #[arg(long, short = 'f')]
         force: bool,
     },
+    /// Search inside decrypted password files
+    Grep {
+        /// grep-compatible arguments: [-i] [-E] [--] <pattern>
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
     /// Generate a shell completion script
     Completion {
         /// Shell to generate completion for: bash, zsh, fish, powershell, elvish

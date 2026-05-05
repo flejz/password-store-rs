@@ -15,5 +15,6 @@ clap = { version = "4", features = ["derive"] }
 dirs = "5"
 rand = "0.8"
 rpassword = "7"
+regex = "1"
 walkdir = "2"
 which = "6"

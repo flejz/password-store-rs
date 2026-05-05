@@ -23,16 +23,20 @@ fn main() -> Result<()> {
         return clipboard::internal_clip_clear(prev_b64, secs);
     }
 
-    // If the first positional arg is not a known subcommand or flag,
-    // treat it as a password name: `pass email/foo` → `pass show email/foo`.
+    // If no positional arg matches a known subcommand, inject `show` so that
+    // `pass <name>`, `pass -c <name>`, and `pass <name> --clip` all work.
     const SUBCOMMANDS: &[&str] = &[
         "init", "ls", "list", "show", "insert", "add",
-        "generate", "rm", "delete", "remove", "completion", "help",
+        "generate", "rm", "delete", "remove", "grep", "completion", "help",
     ];
-    if let Some(first) = raw.get(1) {
-        if !SUBCOMMANDS.contains(&first.as_str()) && !first.starts_with('-') {
-            raw.insert(1, "show".to_string());
-        }
+    let positional: Vec<&str> = raw[1..]
+        .iter()
+        .filter(|a| !a.starts_with('-') && a.as_str() != "--")
+        .map(|a| a.as_str())
+        .collect();
+    let has_subcommand = positional.iter().any(|a| SUBCOMMANDS.contains(a));
+    if !has_subcommand && !positional.is_empty() {
+        raw.insert(1, "show".to_string());
     }
 
     let cli = Cli::parse_from(&raw);
@@ -49,6 +53,11 @@ fn main() -> Result<()> {
         }
 
         Some(Cmd::Completion { shell }) => commands::completion::run(&shell),
+
+        Some(Cmd::Grep { args }) => {
+            let gpg = Gpg::find(config.gpg_opts.clone())?;
+            commands::grep::run(&store, &gpg, &args)
+        }
 
         Some(cmd) => {
             // Commands below all need gpg — find it once here
@@ -74,7 +83,7 @@ fn main() -> Result<()> {
                 }
 
                 // Already handled above; unreachable but needed to exhaust enum
-                Cmd::Ls { .. } | Cmd::Rm { .. } | Cmd::Completion { .. } => unreachable!(),
+                Cmd::Ls { .. } | Cmd::Rm { .. } | Cmd::Completion { .. } | Cmd::Grep { .. } => unreachable!(),
             }
         }
     }
