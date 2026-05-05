@@ -30,9 +30,6 @@ jobs:
             target: aarch64-apple-darwin
             artifact: pass
 
-          - os: macos-13
-            target: x86_64-apple-darwin
-            artifact: pass
 
     steps:
       - uses: actions/checkout@v4
@@ -78,7 +75,6 @@ jobs:
           cp artifacts/pass-x86_64-unknown-linux-musl/pass   release/pass-linux-x86_64
           cp artifacts/pass-x86_64-pc-windows-msvc/pass.exe  release/pass-windows-x86_64.exe
           cp artifacts/pass-aarch64-apple-darwin/pass         release/pass-macos-arm64
-          cp artifacts/pass-x86_64-apple-darwin/pass          release/pass-macos-x86_64
           chmod +x release/pass-linux-x86_64 release/pass-macos-*
 
       - uses: softprops/action-gh-release@v2
