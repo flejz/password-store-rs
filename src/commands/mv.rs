@@ -53,7 +53,7 @@ pub fn run(
             .status();
         let _ = std::process::Command::new("git")
             .args(["-C", store_str, "commit", "-m",
-                   &format!("Rename {} to {}.", old_name, new_name)])
+                   &format!("Rename password from {} to {}.", old_name, new_name)])
             .status();
     }
 

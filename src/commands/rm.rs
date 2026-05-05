@@ -21,7 +21,7 @@ pub fn run(store: &Store, name: &str, recursive: bool, force: bool) -> Result<()
                 bail!("Aborted.");
             }
         }
-        store.git_commit(&pass_dir, &format!("Remove password directory {}.", name));
+        store.git_commit(&pass_dir, &format!("Remove password directory for {}.", name));
         fs::remove_dir_all(&pass_dir)?;
         println!("Removed {}/.", name);
     } else if pass_file.exists() {
@@ -34,7 +34,7 @@ pub fn run(store: &Store, name: &str, recursive: bool, force: bool) -> Result<()
                 bail!("Aborted.");
             }
         }
-        store.git_commit(&pass_file, &format!("Remove password {}.", name));
+        store.git_commit(&pass_file, &format!("Remove password for {}.", name));
         fs::remove_file(&pass_file)?;
         println!("Removed {}.", name);
     } else {

@@ -45,6 +45,6 @@ pub fn run(store: &Store, gpg: &Gpg, name: &str) -> Result<()> {
     gpg.encrypt(&new_content, &recipients, &pass_file)?;
 
     println!("Password for {} saved.", name);
-    store.git_commit(&pass_file, &format!("Edit password for {}.", name));
+    store.git_commit(&pass_file, &format!("Edit password for {} using {}.", name, editor));
     Ok(())
 }

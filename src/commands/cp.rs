@@ -43,7 +43,7 @@ pub fn run(
     }
 
     println!("Copied {} to {}.", old_name, new_name);
-    store.git_commit(&new_file, &format!("Copy {} to {}.", old_name, new_name));
+    store.git_commit(&new_file, &format!("Copy password from {} to {}.", old_name, new_name));
     Ok(())
 }
 

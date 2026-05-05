@@ -72,9 +72,11 @@ pub fn run(
         println!("{}", password);
     }
 
-    store.git_commit(
-        &pass_file,
-        &format!("Generated password for {} ({} chars).", name, length),
-    );
+    let msg = if in_place {
+        format!("Replace generated password for {}.", name)
+    } else {
+        format!("Add generated password for {}.", name)
+    };
+    store.git_commit(&pass_file, &msg);
     Ok(())
 }
