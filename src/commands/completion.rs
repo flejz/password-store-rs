@@ -43,10 +43,11 @@ _pass() {
             | sort
     }
 
+    local subcmds="init ls list show insert add generate rm delete remove completion help"
+
     if [[ $cword -eq 1 ]]; then
-        COMPREPLY=($(compgen -W \
-            "init ls list show insert add generate rm delete remove completion help" \
-            -- "$cur"))
+        # Offer subcommands AND password names — `pass <tab>` acts like `pass show <tab>`
+        COMPREPLY=($(compgen -W "$subcmds $(__pass_names)" -- "$cur"))
         return
     fi
 
@@ -126,6 +127,7 @@ _pass() {
 
     case $state in
         command)
+            # Subcommands + password names so `pass <tab>` also acts as show
             local commands=(
                 'init:Initialize the password store'
                 'ls:List passwords'
@@ -140,7 +142,9 @@ _pass() {
                 'completion:Generate shell completion script'
                 'help:Print help'
             )
-            _describe 'command' commands
+            _alternative \
+                'commands:command:(('"${commands[@]}"'))' \
+                'passwords:password:($(__pass_names))'
             ;;
         args)
             case "${words[2]}" in
@@ -215,7 +219,7 @@ function __pass_using_command
     test (count $cmd) -gt 1; and test $cmd[2] = $argv[1]
 end
 
-# Subcommands
+# At position 1: subcommands AND password names (pass <tab> = pass show <tab>)
 complete -c pass -f -n __pass_needs_command -a init       -d "Initialize the password store"
 complete -c pass -f -n __pass_needs_command -a "ls list"  -d "List passwords"
 complete -c pass -f -n __pass_needs_command -a show       -d "Show a password"
@@ -223,6 +227,7 @@ complete -c pass -f -n __pass_needs_command -a "insert add" -d "Insert a passwor
 complete -c pass -f -n __pass_needs_command -a generate   -d "Generate a password"
 complete -c pass -f -n __pass_needs_command -a "rm delete remove" -d "Remove a password"
 complete -c pass -f -n __pass_needs_command -a completion -d "Generate shell completion script"
+complete -c pass -f -n __pass_needs_command -a "(__pass_names)" -d "Show password"
 
 # show
 complete -c pass -f -n "__pass_using_command show" -a "(__pass_names)"
@@ -288,14 +293,18 @@ Register-ArgumentCompleter -Native -CommandName pass -ScriptBlock {
         }
     }
 
-    function Result($v) {
-        [System.Management.Automation.CompletionResult]::new($v, $v, 'ParameterValue', $v)
+    function Result($v, $desc) {
+        [System.Management.Automation.CompletionResult]::new($v, $v, 'ParameterValue', ($desc ?? $v))
     }
 
     $allCmds = 'init','ls','list','show','insert','add','generate','rm','delete','remove','completion','help'
 
     if ($elements.Count -le 1) {
-        $allCmds | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object { Result $_ }
+        # Subcommands + password names — `pass <tab>` also acts as show
+        $allCmds | Where-Object { $_ -like "$wordToComplete*" } |
+            ForEach-Object { Result $_ $_ }
+        Get-PassNames | Where-Object { $_ -like "$wordToComplete*" } |
+            ForEach-Object { Result $_ "Show password" }
         return
     }
 
@@ -310,20 +319,26 @@ Register-ArgumentCompleter -Native -CommandName pass -ScriptBlock {
                     'generate'                    { '--no-symbols','--clip','--in-place','--force' }
                     default                       { '--recursive','--force' }
                 }
-                $flags | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object { Result $_ }
+                $flags | Where-Object { $_ -like "$wordToComplete*" } |
+                    ForEach-Object { Result $_ $_ }
             } else {
-                Get-PassNames | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object { Result $_ }
+                Get-PassNames | Where-Object { $_ -like "$wordToComplete*" } |
+                    ForEach-Object { Result $_ $_ }
             }
         }
         { $_ -in 'ls','list' } {
-            Get-PassDirs | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object { Result $_ }
+            Get-PassDirs | Where-Object { $_ -like "$wordToComplete*" } |
+                ForEach-Object { Result $_ $_ }
         }
         'completion' {
             'bash','zsh','fish','powershell','elvish' |
-                Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object { Result $_ }
+                Where-Object { $_ -like "$wordToComplete*" } |
+                ForEach-Object { Result $_ $_ }
         }
         default {
-            $allCmds | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object { Result $_ }
+            # Unknown first token — treat as password name (mirrors the binary's default-show)
+            Get-PassNames | Where-Object { $_ -like "$wordToComplete*" } |
+                ForEach-Object { Result $_ "Show password" }
         }
     }
 }
@@ -350,7 +365,9 @@ set edit:completion:arg-completer[pass] = {|@args|
 
     var n = (count $args)
     if (== $n 2) {
+        # Subcommands + password names at position 1
         put init ls list show insert add generate rm delete remove completion help
+        pass-names
     } elif (>= $n 3) {
         var cmd = $args[1]
         if (or (eq $cmd show) (eq $cmd insert) (eq $cmd add) \
