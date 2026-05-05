@@ -82,4 +82,9 @@ pub enum Cmd {
         #[arg(long, short = 'f')]
         force: bool,
     },
+    /// Generate a shell completion script
+    Completion {
+        /// Shell to generate completion for: bash, zsh, fish, powershell, elvish
+        shell: String,
+    },
 }

@@ -36,6 +36,8 @@ fn main() -> Result<()> {
             commands::rm::run(&store, &name, recursive, force)
         }
 
+        Some(Cmd::Completion { shell }) => commands::completion::run(&shell),
+
         Some(cmd) => {
             // Commands below all need gpg — find it once here
             let gpg = Gpg::find(config.gpg_opts.clone())?;
@@ -60,7 +62,7 @@ fn main() -> Result<()> {
                 }
 
                 // Already handled above; unreachable but needed to exhaust enum
-                Cmd::Ls { .. } | Cmd::Rm { .. } => unreachable!(),
+                Cmd::Ls { .. } | Cmd::Rm { .. } | Cmd::Completion { .. } => unreachable!(),
             }
         }
     }

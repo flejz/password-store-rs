@@ -134,6 +134,31 @@ Aliases: `delete`, `remove`.
 
 ---
 
+## Shell completion
+
+Generate and install a completion script for your shell. After installation, Tab completes subcommands, flags, and password names from your store.
+
+```bash
+# Bash — add to ~/.bashrc or drop in /etc/bash_completion.d/
+pass completion bash >> ~/.bash_completion
+
+# Zsh — add to a directory in $fpath
+pass completion zsh > ~/.zfunc/_pass
+# ensure ~/.zfunc is in your fpath: fpath=(~/.zfunc $fpath)
+# then: autoload -Uz compinit && compinit
+
+# Fish
+pass completion fish > ~/.config/fish/completions/pass.fish
+
+# PowerShell (Windows) — add to $PROFILE
+pass completion powershell >> $PROFILE
+
+# Elvish
+pass completion elvish >> ~/.config/elvish/rc.elv
+```
+
+---
+
 ## Environment variables
 
 | Variable | Default | Description |
