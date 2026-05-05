@@ -33,8 +33,11 @@ Download the latest release for your platform from the [Releases](../../releases
 | Platform | File |
 |---|---|
 | Windows (x86-64) | `pass-windows-x86_64.exe` |
+| Windows (ARM64) | `pass-windows-arm64.exe` |
 | Linux (x86-64, static) | `pass-linux-x86_64` |
+| Linux (ARM64, static) | `pass-linux-arm64` |
 | macOS (Apple Silicon) | `pass-macos-arm64` |
+| macOS (Intel) | `pass-macos-x86_64` |
 
 Extract and place the binary somewhere on your `PATH`.
 

@@ -20,16 +20,28 @@ jobs:
             artifact: pass
             musl: true
 
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            artifact: pass
+            musl: true
+
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             artifact: pass.exe
-            # GH Actions already has MSVC link.exe on PATH — no .cargo/config.toml needed
+            linker: link.exe
+
+          - os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            artifact: pass.exe
             linker: link.exe
 
           - os: macos-latest
             target: aarch64-apple-darwin
             artifact: pass
 
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            artifact: pass
 
     steps:
       - uses: actions/checkout@v4
@@ -50,6 +62,7 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
         env:
           CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER: ${{ matrix.linker }}
+          CARGO_TARGET_AARCH64_PC_WINDOWS_MSVC_LINKER: ${{ matrix.linker }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -72,10 +85,13 @@ jobs:
       - name: Rename artifacts
         run: |
           mkdir release
-          cp artifacts/pass-x86_64-unknown-linux-musl/pass   release/pass-linux-x86_64
-          cp artifacts/pass-x86_64-pc-windows-msvc/pass.exe  release/pass-windows-x86_64.exe
-          cp artifacts/pass-aarch64-apple-darwin/pass         release/pass-macos-arm64
-          chmod +x release/pass-linux-x86_64 release/pass-macos-*
+          cp artifacts/pass-x86_64-unknown-linux-musl/pass        release/pass-linux-x86_64
+          cp artifacts/pass-aarch64-unknown-linux-musl/pass        release/pass-linux-arm64
+          cp artifacts/pass-x86_64-pc-windows-msvc/pass.exe       release/pass-windows-x86_64.exe
+          cp artifacts/pass-aarch64-pc-windows-msvc/pass.exe      release/pass-windows-arm64.exe
+          cp artifacts/pass-aarch64-apple-darwin/pass              release/pass-macos-arm64
+          cp artifacts/pass-x86_64-apple-darwin/pass              release/pass-macos-x86_64
+          chmod +x release/pass-linux-* release/pass-macos-*
 
       - uses: softprops/action-gh-release@v2
         with:
