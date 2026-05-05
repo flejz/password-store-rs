@@ -55,11 +55,17 @@ impl Gpg {
             .spawn()
             .context("Failed to run gpg")?;
 
-        if let Some(mut stdin) = child.stdin.take() {
-            stdin.write_all(data)?;
-        }
+        // Write before wait, but always wait even if write fails so the
+        // GPG subprocess is not abandoned as a zombie.
+        let write_result = if let Some(mut stdin) = child.stdin.take() {
+            stdin.write_all(data)
+        } else {
+            Ok(())
+        };
 
         let status = child.wait()?;
+        write_result.context("Failed to write plaintext to gpg stdin")?;
+
         if !status.success() {
             bail!("GPG encryption failed");
         }
