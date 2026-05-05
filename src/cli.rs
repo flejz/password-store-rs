@@ -1,7 +1,11 @@
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "pass", about = "The standard Unix password manager (Windows port)", version)]
+#[command(
+    name = "pass",
+    about = "The standard Unix password manager, rewritten in Rust.\n\n  pass <name>          show password (default command)\n  pass <name> --clip   copy to clipboard",
+    version
+)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Cmd>,
@@ -24,7 +28,7 @@ pub enum Cmd {
         /// Subfolder to list
         subfolder: Option<String>,
     },
-    /// Show existing password, optionally copy to clipboard
+    /// Show existing password (default: `pass <name>` runs this)
     Show {
         /// Password name (or subfolder to list)
         name: String,
