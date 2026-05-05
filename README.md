@@ -256,10 +256,13 @@ To use: install passff-host normally, pointing it at the `pass` binary from this
 
 ## Compatibility with the original pass
 
+Store format is identical — a `.password-store` from Linux `pass` opens unchanged here. See [COMPATIBILITY.md](COMPATIBILITY.md) for a full command-by-command, env var, and behaviour comparison.
+
+In brief:
 - Same `.gpg-id` file format and per-subfolder recipient resolution
 - Same encrypted file format (OpenPGP binary `.gpg`)
 - Same git layout and auto-commit messages
-- Same environment variables (`PASSWORD_STORE_DIR`, etc.)
+- All commands implemented except `otp` (requires `pass-otp` extension)
 - **Not compatible:** `.bash` extension scripts from the original pass
 
 ---
