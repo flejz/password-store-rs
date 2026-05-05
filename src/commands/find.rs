@@ -57,3 +57,43 @@ pub fn run(store: &Store, patterns: &[String]) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    // Pure pattern-matching logic extracted for testing
+    fn matches(stem: &str, patterns: &[&str]) -> bool {
+        let lower = stem.to_lowercase();
+        patterns.iter().any(|p| lower.contains(&p.to_lowercase()))
+    }
+
+    #[test]
+    fn matches_substring() {
+        assert!(matches("gmail", &["mail"]));
+    }
+
+    #[test]
+    fn matches_case_insensitive() {
+        assert!(matches("Gmail", &["gmail"]));
+        assert!(matches("gmail", &["Gmail"]));
+        assert!(matches("GMAIL", &["gmail"]));
+    }
+
+    #[test]
+    fn no_match_returns_false() {
+        assert!(!matches("twitter", &["gmail"]));
+    }
+
+    #[test]
+    fn matches_any_pattern() {
+        assert!(matches("twitter", &["gmail", "twitter"]));
+        assert!(!matches("facebook", &["gmail", "twitter"]));
+    }
+
+    #[test]
+    fn matches_email_stem() {
+        // Simulate email-as-filename: stem is everything before .gpg
+        // e.g. "user@gmail.com.gpg" → stem "user@gmail.com"
+        assert!(matches("user@gmail.com", &["gmail"]));
+        assert!(!matches("user@gmail.com", &["yahoo"]));
+    }
+}

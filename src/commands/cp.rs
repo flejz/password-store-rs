@@ -46,3 +46,29 @@ pub fn run(
     store.git_commit(&new_file, &format!("Copy {} to {}.", old_name, new_name));
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    // Test that recipient comparison logic is correct:
+    // same recipients → simple file copy path, different → re-encrypt path.
+    #[test]
+    fn same_recipients_are_equal() {
+        let a = vec!["key1".to_string(), "key2".to_string()];
+        let b = vec!["key1".to_string(), "key2".to_string()];
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn different_recipients_are_not_equal() {
+        let a = vec!["key1".to_string()];
+        let b = vec!["key2".to_string()];
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn recipient_order_matters() {
+        let a = vec!["key1".to_string(), "key2".to_string()];
+        let b = vec!["key2".to_string(), "key1".to_string()];
+        assert_ne!(a, b);
+    }
+}

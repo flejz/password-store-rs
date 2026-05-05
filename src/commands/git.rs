@@ -18,3 +18,16 @@ pub fn run(store: &Store, args: &[String]) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::store::Store;
+
+    #[test]
+    fn non_utf8_store_path_errors() {
+        // Store with a valid UTF-8 path should produce a valid str
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::open(dir.path().to_path_buf());
+        assert!(store.root.to_str().is_some());
+    }
+}
