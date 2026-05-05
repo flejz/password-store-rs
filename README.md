@@ -154,6 +154,36 @@ Remove a password file. Use `--recursive` to remove a directory.
 
 Aliases: `delete`, `remove`.
 
+### `pass find <pattern>...`
+
+Search password names for a case-insensitive substring match.
+
+Alias: `search`.
+
+### `pass grep [-iE] <pattern>`
+
+Search inside decrypted password files. Supports `-i` (ignore case) and `-E` (extended regex). Used by PassFF for URL metadata search.
+
+### `pass edit <name>`
+
+Decrypt a password, open it in `$EDITOR` (or `notepad.exe` on Windows), then re-encrypt. Uses a temp file in `$TMPDIR` / `%TEMP%`.
+
+### `pass cp <old> <new> [--force]`
+
+Copy a password. If the destination is under a different `.gpg-id`, the password is re-encrypted to the new recipients.
+
+Alias: `copy`.
+
+### `pass mv <old> <new> [--force]`
+
+Move or rename a password. Re-encrypts if crossing a `.gpg-id` boundary.
+
+Alias: `rename`.
+
+### `pass git <args>`
+
+Run any git command inside the password store (`git -C ~/.password-store <args>`).
+
 ---
 
 ## Shell completion
@@ -242,7 +272,7 @@ To use: install passff-host normally, pointing it at the `pass` binary from this
 | Clipboard | `xclip` / `wl-clipboard` / `pbcopy` | Native per-platform via `arboard` |
 | Temp files | `/dev/shm` (RAM) | `$TMPDIR` / `%TEMP%` (disk, less secure) |
 | Extensions | `.bash` scripts | Not yet implemented |
-| Commands | `init ls show insert generate rm mv cp grep find edit git` | `init ls show insert generate rm` (Phase 1) |
+| Commands | `init ls show insert generate rm mv cp grep find edit git` | All implemented (no `otp`) |
 
 ---
 

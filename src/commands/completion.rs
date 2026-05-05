@@ -43,7 +43,7 @@ _pass() {
             | sort
     }
 
-    local subcmds="init ls list show insert add generate rm delete remove completion help"
+    local subcmds="init ls list show insert add generate rm delete remove find search grep edit cp copy mv rename git completion help"
 
     if [[ $cword -eq 1 ]]; then
         # Offer subcommands AND password names — `pass <tab>` acts like `pass show <tab>`
@@ -53,7 +53,7 @@ _pass() {
 
     local cmd="${words[1]}"
     case "$cmd" in
-        show)
+        show|edit)
             if [[ "$cur" == -* ]]; then
                 COMPREPLY=($(compgen -W "--clip --line" -- "$cur"))
             else
@@ -81,8 +81,18 @@ _pass() {
                 COMPREPLY=($(compgen -W "$(__pass_names)" -- "$cur"))
             fi
             ;;
+        cp|copy|mv|rename)
+            if [[ "$cur" == -* ]]; then
+                COMPREPLY=($(compgen -W "--force" -- "$cur"))
+            else
+                COMPREPLY=($(compgen -W "$(__pass_names)" -- "$cur"))
+            fi
+            ;;
         ls|list)
             COMPREPLY=($(compgen -W "$(__pass_dirs)" -- "$cur"))
+            ;;
+        find|search)
+            COMPREPLY=($(compgen -W "$(__pass_names)" -- "$cur"))
             ;;
         init)
             if [[ "$cur" == -* ]]; then
@@ -139,6 +149,15 @@ _pass() {
                 'rm:Remove a password'
                 'delete:Remove a password'
                 'remove:Remove a password'
+                'find:Search password names'
+                'search:Search password names'
+                'grep:Search inside passwords'
+                'edit:Edit a password'
+                'cp:Copy a password'
+                'copy:Copy a password'
+                'mv:Move a password'
+                'rename:Move a password'
+                'git:Run git in the store'
                 'completion:Generate shell completion script'
                 'help:Print help'
             )
@@ -175,6 +194,18 @@ _pass() {
                         '(-r --recursive)'{-r,--recursive}'[Recursive]' \
                         '(-f --force)'{-f,--force}'[Force]' \
                         ':password name:($(__pass_names))'
+                    ;;
+                edit)
+                    _arguments ':password name:($(__pass_names))'
+                    ;;
+                cp|copy|mv|rename)
+                    _arguments \
+                        '(-f --force)'{-f,--force}'[Overwrite without confirm]' \
+                        ':source:($(__pass_names))' \
+                        ':destination:($(__pass_names))'
+                    ;;
+                find|search)
+                    _arguments '*:pattern:'
                     ;;
                 ls|list)
                     _arguments ':subfolder:($(__pass_dirs))'
@@ -220,14 +251,20 @@ function __pass_using_command
 end
 
 # At position 1: subcommands AND password names (pass <tab> = pass show <tab>)
-complete -c pass -f -n __pass_needs_command -a init       -d "Initialize the password store"
-complete -c pass -f -n __pass_needs_command -a "ls list"  -d "List passwords"
-complete -c pass -f -n __pass_needs_command -a show       -d "Show a password"
-complete -c pass -f -n __pass_needs_command -a "insert add" -d "Insert a password"
-complete -c pass -f -n __pass_needs_command -a generate   -d "Generate a password"
+complete -c pass -f -n __pass_needs_command -a init              -d "Initialize the password store"
+complete -c pass -f -n __pass_needs_command -a "ls list"         -d "List passwords"
+complete -c pass -f -n __pass_needs_command -a show              -d "Show a password"
+complete -c pass -f -n __pass_needs_command -a "insert add"      -d "Insert a password"
+complete -c pass -f -n __pass_needs_command -a generate          -d "Generate a password"
 complete -c pass -f -n __pass_needs_command -a "rm delete remove" -d "Remove a password"
-complete -c pass -f -n __pass_needs_command -a completion -d "Generate shell completion script"
-complete -c pass -f -n __pass_needs_command -a "(__pass_names)" -d "Show password"
+complete -c pass -f -n __pass_needs_command -a "find search"     -d "Search password names"
+complete -c pass -f -n __pass_needs_command -a grep              -d "Search inside passwords"
+complete -c pass -f -n __pass_needs_command -a edit              -d "Edit a password"
+complete -c pass -f -n __pass_needs_command -a "cp copy"         -d "Copy a password"
+complete -c pass -f -n __pass_needs_command -a "mv rename"       -d "Move a password"
+complete -c pass -f -n __pass_needs_command -a git               -d "Run git in the store"
+complete -c pass -f -n __pass_needs_command -a completion        -d "Generate shell completion script"
+complete -c pass -f -n __pass_needs_command -a "(__pass_names)"  -d "Show password"
 
 # show
 complete -c pass -f -n "__pass_using_command show" -a "(__pass_names)"
@@ -259,6 +296,26 @@ end
 # ls / list
 for __subcmd in ls list
     complete -c pass -f -n "__pass_using_command $__subcmd" -a "(__pass_dirs)"
+end
+
+# edit
+complete -c pass -f -n "__pass_using_command edit" -a "(__pass_names)"
+
+# cp / copy
+for __subcmd in cp copy
+    complete -c pass -f -n "__pass_using_command $__subcmd" -a "(__pass_names)"
+    complete -c pass -f -n "__pass_using_command $__subcmd" -l force -s f -d "Overwrite without confirm"
+end
+
+# mv / rename
+for __subcmd in mv rename
+    complete -c pass -f -n "__pass_using_command $__subcmd" -a "(__pass_names)"
+    complete -c pass -f -n "__pass_using_command $__subcmd" -l force -s f -d "Overwrite without confirm"
+end
+
+# find / search (complete with names as hints)
+for __subcmd in find search
+    complete -c pass -f -n "__pass_using_command $__subcmd" -a "(__pass_names)"
 end
 
 # completion
@@ -297,7 +354,8 @@ Register-ArgumentCompleter -Native -CommandName pass -ScriptBlock {
         [System.Management.Automation.CompletionResult]::new($v, $v, 'ParameterValue', ($desc ?? $v))
     }
 
-    $allCmds = 'init','ls','list','show','insert','add','generate','rm','delete','remove','completion','help'
+    $allCmds = 'init','ls','list','show','insert','add','generate','rm','delete','remove',
+               'find','search','grep','edit','cp','copy','mv','rename','git','completion','help'
 
     if ($elements.Count -le 1) {
         # Subcommands + password names — `pass <tab>` also acts as show
@@ -311,13 +369,15 @@ Register-ArgumentCompleter -Native -CommandName pass -ScriptBlock {
     $cmd = $elements[1].Value
 
     switch -Wildcard ($cmd) {
-        { $_ -in 'show','insert','add','generate','rm','delete','remove' } {
+        { $_ -in 'show','insert','add','generate','rm','delete','remove','edit','cp','copy','mv','rename','find','search' } {
             if ($wordToComplete -like '-*') {
                 $flags = switch ($cmd) {
-                    'show'                        { '--clip','--line' }
-                    { $_ -in 'insert','add' }     { '--echo','--multiline','--force' }
-                    'generate'                    { '--no-symbols','--clip','--in-place','--force' }
-                    default                       { '--recursive','--force' }
+                    'show'                            { '--clip','--line' }
+                    { $_ -in 'insert','add' }         { '--echo','--multiline','--force' }
+                    'generate'                        { '--no-symbols','--clip','--in-place','--force' }
+                    { $_ -in 'rm','delete','remove' } { '--recursive','--force' }
+                    { $_ -in 'cp','copy','mv','rename' } { '--force' }
+                    default                           { @() }
                 }
                 $flags | Where-Object { $_ -like "$wordToComplete*" } |
                     ForEach-Object { Result $_ $_ }
@@ -366,12 +426,14 @@ set edit:completion:arg-completer[pass] = {|@args|
     var n = (count $args)
     if (== $n 2) {
         # Subcommands + password names at position 1
-        put init ls list show insert add generate rm delete remove completion help
+        put init ls list show insert add generate rm delete remove find search grep edit cp copy mv rename git completion help
         pass-names
     } elif (>= $n 3) {
         var cmd = $args[1]
         if (or (eq $cmd show) (eq $cmd insert) (eq $cmd add) \
-               (eq $cmd generate) (eq $cmd rm) (eq $cmd delete) (eq $cmd remove)) {
+               (eq $cmd generate) (eq $cmd rm) (eq $cmd delete) (eq $cmd remove) \
+               (eq $cmd edit) (eq $cmd cp) (eq $cmd copy) (eq $cmd mv) (eq $cmd rename) \
+               (eq $cmd find) (eq $cmd search)) {
             pass-names
         } elif (or (eq $cmd ls) (eq $cmd list)) {
             pass-dirs
