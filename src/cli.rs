@@ -86,6 +86,40 @@ pub enum Cmd {
         #[arg(long, short = 'f')]
         force: bool,
     },
+    /// Show password names matching a pattern
+    #[command(alias = "search")]
+    Find {
+        /// Pattern(s) to search (case-insensitive substring)
+        #[arg(required = true)]
+        patterns: Vec<String>,
+    },
+    /// Edit a password in $EDITOR
+    Edit {
+        /// Password name
+        name: String,
+    },
+    /// Copy a password to a new path
+    #[command(alias = "copy")]
+    Cp {
+        /// Source password name
+        old_path: String,
+        /// Destination password name
+        new_path: String,
+        /// Overwrite existing without confirmation
+        #[arg(long, short = 'f')]
+        force: bool,
+    },
+    /// Move or rename a password
+    #[command(alias = "rename")]
+    Mv {
+        /// Source password name
+        old_path: String,
+        /// Destination password name
+        new_path: String,
+        /// Overwrite existing without confirmation
+        #[arg(long, short = 'f')]
+        force: bool,
+    },
     /// Run a git command inside the password store
     Git {
         /// git arguments

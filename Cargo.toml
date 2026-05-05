@@ -16,6 +16,7 @@ dirs = "5"
 rand = "0.8"
 rpassword = "7"
 regex = "1"
+tempfile = "3"
 walkdir = "2"
 which = "6"
 

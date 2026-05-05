@@ -26,8 +26,9 @@ fn main() -> Result<()> {
     // If no positional arg matches a known subcommand, inject `show` so that
     // `pass <name>`, `pass -c <name>`, and `pass <name> --clip` all work.
     const SUBCOMMANDS: &[&str] = &[
-        "init", "ls", "list", "show", "insert", "add",
-        "generate", "rm", "delete", "remove", "grep", "git", "completion", "help",
+        "init", "ls", "list", "show", "insert", "add", "generate",
+        "rm", "delete", "remove", "grep", "git", "find", "search",
+        "edit", "cp", "copy", "mv", "rename", "completion", "help",
     ];
     let positional: Vec<&str> = raw[1..]
         .iter()
@@ -56,6 +57,8 @@ fn main() -> Result<()> {
 
         Some(Cmd::Git { args }) => commands::git::run(&store, &args),
 
+        Some(Cmd::Find { patterns }) => commands::find::run(&store, &patterns),
+
         Some(Cmd::Grep { args }) => {
             let gpg = Gpg::find(gpg_opts)?;
             commands::grep::run(&store, &gpg, &args)
@@ -83,9 +86,19 @@ fn main() -> Result<()> {
                     )
                 }
 
+                Cmd::Edit { name } => commands::edit::run(&store, &gpg, &name),
+
+                Cmd::Cp { old_path, new_path, force } => {
+                    commands::cp::run(&store, &gpg, &old_path, &new_path, force)
+                }
+
+                Cmd::Mv { old_path, new_path, force } => {
+                    commands::mv::run(&store, &gpg, &old_path, &new_path, force)
+                }
+
                 // Already handled above; unreachable but needed to exhaust enum
                 Cmd::Ls { .. } | Cmd::Rm { .. } | Cmd::Completion { .. }
-                | Cmd::Git { .. } | Cmd::Grep { .. } => unreachable!(),
+                | Cmd::Git { .. } | Cmd::Grep { .. } | Cmd::Find { .. } => unreachable!(),
             }
         }
     }
