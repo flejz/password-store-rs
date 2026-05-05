@@ -206,6 +206,24 @@ git push -u origin master
 
 ---
 
+## PassFF browser extension
+
+[PassFF](https://codeberg.org/PassFF/passff) is a Firefox extension that integrates `pass` directly into the browser for auto-fill. pass-rs is compatible with PassFF via the [passff-host](https://codeberg.org/PassFF/passff-host) native messaging host.
+
+Supported PassFF operations:
+
+| Operation | Status |
+|---|---|
+| Browse and search passwords | ✅ |
+| Auto-fill username & password | ✅ |
+| Insert / generate passwords | ✅ |
+| URL metadata search (`pass grep`) | ✅ |
+| One-time passwords (`pass otp`) | ❌ requires the `pass-otp` extension |
+
+To use: install passff-host normally, pointing it at the `pass` binary from this project.
+
+---
+
 ## Compatibility with the original pass
 
 - Same `.gpg-id` file format and per-subfolder recipient resolution
