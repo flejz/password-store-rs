@@ -16,14 +16,26 @@ use store::Store;
 fn main() -> Result<()> {
     // Intercept internal clipboard-clear subcommand before clap runs.
     // Spawned as a detached hidden process by `show --clip` and `generate --clip`.
-    let raw: Vec<String> = std::env::args().collect();
+    let mut raw: Vec<String> = std::env::args().collect();
     if raw.get(1).map(|s| s.as_str()) == Some("--internal-clip-clear") {
         let prev_b64 = raw.get(2).map(|s| s.as_str()).unwrap_or("");
         let secs: u64 = raw.get(3).and_then(|s| s.parse().ok()).unwrap_or(45);
         return clipboard::internal_clip_clear(prev_b64, secs);
     }
 
-    let cli = Cli::parse();
+    // If the first positional arg is not a known subcommand or flag,
+    // treat it as a password name: `pass email/foo` → `pass show email/foo`.
+    const SUBCOMMANDS: &[&str] = &[
+        "init", "ls", "list", "show", "insert", "add",
+        "generate", "rm", "delete", "remove", "completion", "help",
+    ];
+    if let Some(first) = raw.get(1) {
+        if !SUBCOMMANDS.contains(&first.as_str()) && !first.starts_with('-') {
+            raw.insert(1, "show".to_string());
+        }
+    }
+
+    let cli = Cli::parse_from(&raw);
     let config = Config::load()?;
     let store = Store::open(config.store_dir.clone());
 

@@ -39,7 +39,7 @@ pub fn run(
         let pass = rpassword::prompt_password(format!("Enter password for {}: ", name))?;
         let confirm = rpassword::prompt_password(format!("Retype password for {}: ", name))?;
         if pass != confirm {
-            bail!("Error: the entered passwords do not match.");
+            bail!("the entered passwords do not match.");
         }
         pass + "\n"
     };

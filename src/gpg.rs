@@ -41,7 +41,7 @@ impl Gpg {
 
         for r in recipients {
             args.push("-r".into());
-            args.push(r.clone());
+            args.push(format_key_id(r));
         }
 
         args.extend(self.extra_opts.clone());
@@ -69,12 +69,22 @@ impl Gpg {
 
     pub fn key_exists(&self, key_id: &str) -> bool {
         Command::new(&self.path)
-            .args(["--list-keys", key_id])
+            .args(["--list-keys", &format_key_id(key_id)])
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .status()
             .map(|s| s.success())
             .unwrap_or(false)
+    }
+}
+
+/// Wrap email-style key IDs in angle brackets so GPG resolves them correctly
+/// on all platforms (e.g. `user@example.com` → `<user@example.com>`).
+fn format_key_id(id: &str) -> String {
+    if id.contains('@') && !id.starts_with('<') {
+        format!("<{}>", id)
+    } else {
+        id.to_string()
     }
 }
 

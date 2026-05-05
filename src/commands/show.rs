@@ -20,7 +20,7 @@ pub fn run(
             tree::print_tree(&store.root, Some(name));
             return Ok(());
         }
-        bail!("Error: {} is not in the password store.", name);
+        bail!("{} is not in the password store.", name);
     }
 
     let data = gpg.decrypt(&pass_file)?;

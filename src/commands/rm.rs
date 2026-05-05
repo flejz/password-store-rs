@@ -38,7 +38,7 @@ pub fn run(store: &Store, name: &str, recursive: bool, force: bool) -> Result<()
         fs::remove_file(&pass_file)?;
         println!("Removed {}.", name);
     } else {
-        bail!("Error: {} is not in the password store.", name);
+        bail!("{} is not in the password store.", name);
     }
 
     Ok(())
