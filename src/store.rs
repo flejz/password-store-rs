@@ -34,10 +34,14 @@ impl Store {
             bail!("Sneaky path component: {}", name);
         }
         let name = name.trim_matches('/').trim_matches('\\');
-        let mut path = self.root.join(name);
-        if path.extension().map(|e| e != "gpg").unwrap_or(true) {
-            path.set_extension("gpg");
-        }
+        // Append .gpg as a suffix — never use set_extension(), which would
+        // replace an existing extension like .com in `user@gmail.com`.
+        let full = if name.ends_with(".gpg") {
+            name.to_string()
+        } else {
+            format!("{}.gpg", name)
+        };
+        let path = self.root.join(&full);
         if !path.starts_with(&self.root) {
             bail!("Path escapes store: {}", path.display());
         }
