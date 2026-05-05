@@ -26,18 +26,39 @@ The original `pass` is a 700-line bash script with hard dependencies on MSYS2/Cy
 
 ## Installation
 
-Build from source:
+### Pre-built binaries
+
+Download the latest release for your platform from the [Releases](../../releases) page:
+
+| Platform | File |
+|---|---|
+| Windows (x86-64) | `pass-x86_64-pc-windows-msvc.zip` |
+| Linux (x86-64) | `pass-x86_64-unknown-linux-gnu.tar.gz` |
+| macOS (Apple Silicon) | `pass-aarch64-apple-darwin.tar.gz` |
+| macOS (Intel) | `pass-x86_64-apple-darwin.tar.gz` |
+
+Extract and place the binary somewhere on your `PATH`.
+
+### Install with Cargo
 
 ```bash
+cargo install --git https://github.com/flejz/password-store-rs
+```
+
+### Build from source
+
+```bash
+git clone https://github.com/flejz/password-store-rs
+cd password-store-rs
 cargo build --release
 # Binary: target/release/pass  (target/release/pass.exe on Windows)
 ```
 
-Place the binary somewhere on your `PATH`.
-
 ### Windows notes
 
-**Building from source:** requires the MSVC toolchain (`rustup target add x86_64-pc-windows-msvc`). If you have Git for Windows installed, its `link.exe` may shadow the MSVC linker. The included `.cargo/config.toml` pins the correct linker path for Gpg4win installs — adjust it if your VS install is in a different location.
+**Linker conflict:** Git for Windows ships a `link.exe` that shadows MSVC's linker. If `cargo build` fails with a linker error, find the MSVC linker path and either:
+- Prepend it to `PATH`, or
+- Uncomment and set the `linker` entry in `.cargo/config.toml` (see file for instructions)
 
 **Adding to PATH:** copy `pass.exe` to a directory already on your `PATH` (e.g. `C:\Users\<you>\bin`), or add a new folder via *System Properties → Environment Variables*.
 
