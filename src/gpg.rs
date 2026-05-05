@@ -1,0 +1,103 @@
+use std::io::Write;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
+use anyhow::{anyhow, bail, Context, Result};
+
+pub struct Gpg {
+    path: PathBuf,
+    extra_opts: Vec<String>,
+}
+
+impl Gpg {
+    pub fn find(extra_opts: Vec<String>) -> Result<Self> {
+        let path = find_gpg_binary()?;
+        Ok(Gpg { path, extra_opts })
+    }
+
+    pub fn decrypt(&self, file: &Path) -> Result<Vec<u8>> {
+        let output = Command::new(&self.path)
+            .args(["--quiet", "--yes", "--compress-algo=none", "--no-encrypt-to", "-d"])
+            .args(&self.extra_opts)
+            .arg(file)
+            .output()
+            .context("Failed to run gpg")?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            bail!("GPG decryption failed: {}", stderr.trim());
+        }
+
+        Ok(output.stdout)
+    }
+
+    pub fn encrypt(&self, data: &[u8], recipients: &[String], out: &Path) -> Result<()> {
+        let mut args: Vec<String> = vec![
+            "--quiet".into(),
+            "--yes".into(),
+            "--compress-algo=none".into(),
+            "--no-encrypt-to".into(),
+            "--batch".into(),
+        ];
+
+        for r in recipients {
+            args.push("-r".into());
+            args.push(r.clone());
+        }
+
+        args.extend(self.extra_opts.clone());
+        args.extend(["-e".into(), "-o".into(), out.to_string_lossy().into_owned()]);
+
+        let mut child = Command::new(&self.path)
+            .args(&args)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::null())
+            .stderr(Stdio::inherit())
+            .spawn()
+            .context("Failed to run gpg")?;
+
+        if let Some(mut stdin) = child.stdin.take() {
+            stdin.write_all(data)?;
+        }
+
+        let status = child.wait()?;
+        if !status.success() {
+            bail!("GPG encryption failed");
+        }
+
+        Ok(())
+    }
+
+    pub fn key_exists(&self, key_id: &str) -> bool {
+        Command::new(&self.path)
+            .args(["--list-keys", key_id])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false)
+    }
+}
+
+fn find_gpg_binary() -> Result<PathBuf> {
+    if let Ok(p) = which::which("gpg") {
+        return Ok(p);
+    }
+
+    for base in [r"C:\Program Files (x86)\GnuPG", r"C:\Program Files\GnuPG"] {
+        let p = Path::new(base).join("bin").join("gpg.exe");
+        if p.exists() {
+            return Ok(p);
+        }
+    }
+
+    if let Some(home) = dirs::home_dir() {
+        let scoop = home.join("scoop").join("shims").join("gpg.exe");
+        if scoop.exists() {
+            return Ok(scoop);
+        }
+    }
+
+    Err(anyhow!(
+        "gpg not found. Install Gpg4win from https://gpg4win.org or add gpg to your PATH."
+    ))
+}

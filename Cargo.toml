@@ -1,0 +1,19 @@
+[package]
+name = "pass-win"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "pass"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+arboard = "3"
+base64 = "0.22"
+clap = { version = "4", features = ["derive"] }
+dirs = "5"
+rand = "0.8"
+rpassword = "7"
+walkdir = "2"
+which = "6"

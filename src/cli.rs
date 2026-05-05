@@ -1,0 +1,85 @@
+use clap::{Parser, Subcommand};
+
+#[derive(Parser)]
+#[command(name = "pass", about = "The standard Unix password manager (Windows port)", version)]
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Option<Cmd>,
+}
+
+#[derive(Subcommand)]
+pub enum Cmd {
+    /// Initialize the password store with a GPG key ID
+    Init {
+        /// GPG key IDs to encrypt with
+        #[arg(required = true)]
+        gpg_ids: Vec<String>,
+        /// Initialize a subfolder with its own .gpg-id
+        #[arg(long, short = 'p')]
+        path: Option<String>,
+    },
+    /// List passwords
+    #[command(alias = "list")]
+    Ls {
+        /// Subfolder to list
+        subfolder: Option<String>,
+    },
+    /// Show existing password, optionally copy to clipboard
+    Show {
+        /// Password name (or subfolder to list)
+        name: String,
+        /// Copy to clipboard instead of printing
+        #[arg(long, short = 'c')]
+        clip: bool,
+        /// Line number to copy (default: 1)
+        #[arg(long, short = 'n', default_value = "1")]
+        line: usize,
+    },
+    /// Insert a new password
+    #[command(alias = "add")]
+    Insert {
+        /// Password name
+        name: String,
+        /// Echo typed characters
+        #[arg(long, short = 'e')]
+        echo: bool,
+        /// Read multi-line input until EOF
+        #[arg(long, short = 'm')]
+        multiline: bool,
+        /// Overwrite existing without confirmation
+        #[arg(long, short = 'f')]
+        force: bool,
+    },
+    /// Generate a random password
+    Generate {
+        /// Password name
+        name: String,
+        /// Password length
+        #[arg(default_value = "25")]
+        length: usize,
+        /// Use only alphanumeric characters
+        #[arg(long, short = 'n')]
+        no_symbols: bool,
+        /// Copy generated password to clipboard
+        #[arg(long, short = 'c')]
+        clip: bool,
+        /// Replace only the first line of an existing entry
+        #[arg(long, short = 'i')]
+        in_place: bool,
+        /// Overwrite existing without confirmation
+        #[arg(long, short = 'f')]
+        force: bool,
+    },
+    /// Remove a password or directory
+    #[command(aliases = ["delete", "remove"])]
+    Rm {
+        /// Password name or directory
+        name: String,
+        /// Remove directory recursively
+        #[arg(long, short = 'r')]
+        recursive: bool,
+        /// Remove without confirmation
+        #[arg(long, short = 'f')]
+        force: bool,
+    },
+}
