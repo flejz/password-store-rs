@@ -2,113 +2,87 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    tags: ['v*']
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
-    name: ${{ matrix.target }}
+    name: build (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            artifact: pass
+            musl: true
+
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            binary: pass.exe
-            archive: zip
-
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            binary: pass
-            archive: tar.gz
-
-          - os: macos-13
-            target: x86_64-apple-darwin
-            binary: pass
-            archive: tar.gz
+            artifact: pass.exe
+            # GH Actions already has MSVC link.exe on PATH — no .cargo/config.toml needed
+            linker: link.exe
 
           - os: macos-latest
             target: aarch64-apple-darwin
-            binary: pass
-            archive: tar.gz
+            artifact: pass
+
+          - os: macos-13
+            target: x86_64-apple-darwin
+            artifact: pass
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
 
-      - name: Find MSVC linker (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          $linker = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" `
-            -latest -products * `
-            -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
-            -find "VC\Tools\MSVC\*\bin\HostX64\x64\link.exe" | Select-Object -Last 1
-          "CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER=$linker" | Out-File -FilePath $env:GITHUB_ENV -Append
-
-      - name: Install X11/clipboard deps (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
-
       - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Install musl-tools
+        if: matrix.musl
+        run: sudo apt-get install -y musl-tools
 
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
-
-      - name: Package (Windows)
-        if: matrix.archive == 'zip'
-        shell: pwsh
-        run: |
-          $asset = "pass-${{ matrix.target }}.zip"
-          $dir   = "pass-${{ matrix.target }}"
-          New-Item -ItemType Directory $dir | Out-Null
-          Copy-Item "target/${{ matrix.target }}/release/${{ matrix.binary }}" $dir/
-          Copy-Item README.md $dir/
-          Compress-Archive -Path "$dir/*" -DestinationPath $asset
-          "ASSET=$asset" | Out-File -FilePath $env:GITHUB_ENV -Append
-
-      - name: Package (Unix)
-        if: matrix.archive == 'tar.gz'
-        run: |
-          asset="pass-${{ matrix.target }}.tar.gz"
-          dir="pass-${{ matrix.target }}"
-          mkdir "$dir"
-          cp "target/${{ matrix.target }}/release/${{ matrix.binary }}" "$dir/"
-          cp README.md "$dir/"
-          tar czf "$asset" "$dir/"
-          echo "ASSET=$asset" >> "$GITHUB_ENV"
+        env:
+          CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER: ${{ matrix.linker }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: pass-${{ matrix.target }}
-          path: ${{ env.ASSET }}
+          path: target/${{ matrix.target }}/release/${{ matrix.artifact }}
+          if-no-files-found: error
 
   release:
-    name: GitHub Release
+    name: create release
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
-          merge-multiple: true
 
-      - name: Create release
-        uses: softprops/action-gh-release@v2
+      - name: Rename artifacts
+        run: |
+          mkdir release
+          cp artifacts/pass-x86_64-unknown-linux-musl/pass   release/pass-linux-x86_64
+          cp artifacts/pass-x86_64-pc-windows-msvc/pass.exe  release/pass-windows-x86_64.exe
+          cp artifacts/pass-aarch64-apple-darwin/pass         release/pass-macos-arm64
+          cp artifacts/pass-x86_64-apple-darwin/pass          release/pass-macos-x86_64
+          chmod +x release/pass-linux-x86_64 release/pass-macos-*
+
+      - uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/*
+          files: release/*
           generate_release_notes: true
+          fail_on_unmatched_files: true

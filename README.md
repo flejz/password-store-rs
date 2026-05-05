@@ -32,10 +32,10 @@ Download the latest release for your platform from the [Releases](../../releases
 
 | Platform | File |
 |---|---|
-| Windows (x86-64) | `pass-x86_64-pc-windows-msvc.zip` |
-| Linux (x86-64) | `pass-x86_64-unknown-linux-gnu.tar.gz` |
-| macOS (Apple Silicon) | `pass-aarch64-apple-darwin.tar.gz` |
-| macOS (Intel) | `pass-x86_64-apple-darwin.tar.gz` |
+| Windows (x86-64) | `pass-windows-x86_64.exe` |
+| Linux (x86-64, static) | `pass-linux-x86_64` |
+| macOS (Apple Silicon) | `pass-macos-arm64` |
+| macOS (Intel) | `pass-macos-x86_64` |
 
 Extract and place the binary somewhere on your `PATH`.
 
@@ -56,9 +56,10 @@ cargo build --release
 
 ### Windows notes
 
-**Linker conflict:** Git for Windows ships a `link.exe` that shadows MSVC's linker. If `cargo build` fails with a linker error, find the MSVC linker path and either:
-- Prepend it to `PATH`, or
-- Uncomment and set the `linker` entry in `.cargo/config.toml` (see file for instructions)
+**Linker conflict:** Git for Windows ships a `link.exe` that shadows MSVC's. If `cargo build` fails with a linker error, prepend the MSVC bin directory to `PATH`. Find it with:
+```powershell
+& "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -find "VC\Tools\MSVC\*\bin\HostX64\x64\link.exe"
+```
 
 **Adding to PATH:** copy `pass.exe` to a directory already on your `PATH` (e.g. `C:\Users\<you>\bin`), or add a new folder via *System Properties → Environment Variables*.
 
