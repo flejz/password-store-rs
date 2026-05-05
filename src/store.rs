@@ -56,10 +56,14 @@ impl Store {
             pass_path
         };
 
-        let mut dirs: Vec<PathBuf> = vec![];
+        // Walk up from start to root, checking for .gpg-id at each level.
+        // No intermediate Vec — check on each iteration.
         let mut current = start.to_path_buf();
         loop {
-            dirs.push(current.clone());
+            let candidate = current.join(".gpg-id");
+            if candidate.exists() {
+                return parse_gpg_id(&candidate);
+            }
             if current == self.root {
                 break;
             }
@@ -67,17 +71,7 @@ impl Store {
                 Some(p) if p.starts_with(&self.root) || p == self.root => {
                     current = p.to_path_buf();
                 }
-                _ => {
-                    dirs.push(self.root.clone());
-                    break;
-                }
-            }
-        }
-
-        for dir in &dirs {
-            let candidate = dir.join(".gpg-id");
-            if candidate.exists() {
-                return parse_gpg_id(&candidate);
+                _ => break,
             }
         }
 
@@ -123,8 +117,11 @@ pub(crate) fn parse_gpg_id(path: &Path) -> Result<Vec<String>> {
     let content = fs::read_to_string(path)?;
     let ids: Vec<String> = content
         .lines()
+        .filter(|l| {
+            let t = l.trim();
+            !t.is_empty() && !t.starts_with('#')
+        })
         .map(|l| l.trim().to_string())
-        .filter(|l| !l.is_empty() && !l.starts_with('#'))
         .collect();
 
     if ids.is_empty() {

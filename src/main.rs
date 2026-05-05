@@ -40,8 +40,8 @@ fn main() -> Result<()> {
     }
 
     let cli = Cli::parse_from(&raw);
-    let config = Config::load()?;
-    let store = Store::open(config.store_dir.clone());
+    let config::Config { store_dir, clip_time, gpg_opts } = Config::load()?;
+    let store = Store::open(store_dir);
 
     match cli.command {
         None => commands::list::run(&store, None),
@@ -55,13 +55,12 @@ fn main() -> Result<()> {
         Some(Cmd::Completion { shell }) => commands::completion::run(&shell),
 
         Some(Cmd::Grep { args }) => {
-            let gpg = Gpg::find(config.gpg_opts.clone())?;
+            let gpg = Gpg::find(gpg_opts)?;
             commands::grep::run(&store, &gpg, &args)
         }
 
         Some(cmd) => {
-            // Commands below all need gpg — find it once here
-            let gpg = Gpg::find(config.gpg_opts.clone())?;
+            let gpg = Gpg::find(gpg_opts)?;
 
             match cmd {
                 Cmd::Init { gpg_ids, path } => {
@@ -69,7 +68,7 @@ fn main() -> Result<()> {
                 }
 
                 Cmd::Show { name, clip, line } => {
-                    commands::show::run(&store, &gpg, &config, &name, clip, line)
+                    commands::show::run(&store, &gpg, clip_time, &name, clip, line)
                 }
 
                 Cmd::Insert { name, echo, multiline, force } => {
@@ -78,7 +77,7 @@ fn main() -> Result<()> {
 
                 Cmd::Generate { name, length, no_symbols, clip, in_place, force } => {
                     commands::generate::run(
-                        &store, &gpg, &config, &name, length, no_symbols, clip, in_place, force,
+                        &store, &gpg, clip_time, &name, length, no_symbols, clip, in_place, force,
                     )
                 }
 

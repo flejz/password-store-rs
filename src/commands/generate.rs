@@ -2,12 +2,12 @@ use std::fs;
 use std::io::{self, Write};
 use anyhow::{bail, Result};
 use rand::Rng;
-use crate::{clipboard, config::Config, gpg::Gpg, store::Store};
+use crate::{clipboard, gpg::Gpg, store::Store};
 
 pub fn run(
     store: &Store,
     gpg: &Gpg,
-    config: &Config,
+    clip_time: u64,
     name: &str,
     length: usize,
     no_symbols: bool,
@@ -62,10 +62,10 @@ pub fn run(
 
     if clip {
         let prev = clipboard::copy_to_clipboard(&password)?;
-        clipboard::spawn_clip_clear(&prev, config.clip_time)?;
+        clipboard::spawn_clip_clear(&prev, clip_time)?;
         println!(
             "Generated password for {} and copied to clipboard. Will clear in {} seconds.",
-            name, config.clip_time
+            name, clip_time
         );
     } else {
         println!("Generated password for {}:", name);

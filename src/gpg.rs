@@ -44,7 +44,7 @@ impl Gpg {
             args.push(format_key_id(r));
         }
 
-        args.extend(self.extra_opts.clone());
+        args.extend_from_slice(&self.extra_opts);
         args.extend(["-e".into(), "-o".into(), out.to_string_lossy().into_owned()]);
 
         let mut child = Command::new(&self.path)

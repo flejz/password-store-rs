@@ -1,10 +1,10 @@
 use anyhow::{bail, Result};
-use crate::{clipboard, config::Config, gpg::Gpg, store::Store, tree};
+use crate::{clipboard, gpg::Gpg, store::Store, tree};
 
 pub fn run(
     store: &Store,
     gpg: &Gpg,
-    config: &Config,
+    clip_time: u64,
     name: &str,
     clip: bool,
     line_num: usize,
@@ -41,11 +41,11 @@ pub fn run(
             .ok_or_else(|| anyhow::anyhow!("There is no line {} in {}.", line_num, name))?;
 
         let prev = clipboard::copy_to_clipboard(password)?;
-        clipboard::spawn_clip_clear(&prev, config.clip_time)?;
+        clipboard::spawn_clip_clear(&prev, clip_time)?;
 
         println!(
             "Copied {} to clipboard. Will clear in {} seconds.",
-            name, config.clip_time
+            name, clip_time
         );
     } else {
         print!("{}", text);
