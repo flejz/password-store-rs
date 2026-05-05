@@ -37,6 +37,8 @@ impl Gpg {
             "--compress-algo=none".into(),
             "--no-encrypt-to".into(),
             "--batch".into(),
+            "--trust-model".into(),
+            "always".into(),
         ];
 
         for r in recipients {
