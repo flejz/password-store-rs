@@ -119,7 +119,7 @@ impl Store {
     }
 }
 
-fn parse_gpg_id(path: &Path) -> Result<Vec<String>> {
+pub(crate) fn parse_gpg_id(path: &Path) -> Result<Vec<String>> {
     let content = fs::read_to_string(path)?;
     let ids: Vec<String> = content
         .lines()
@@ -132,4 +132,111 @@ fn parse_gpg_id(path: &Path) -> Result<Vec<String>> {
     }
 
     Ok(ids)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::TempDir;
+
+    fn make_store() -> (TempDir, Store) {
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(dir.path().join(".gpg-id"), "test@example.com\n").unwrap();
+        let store = Store::open(dir.path().to_path_buf());
+        (dir, store)
+    }
+
+    // pass_file — basic name
+    #[test]
+    fn pass_file_simple() {
+        let (_dir, store) = make_store();
+        let p = store.pass_file("email/gmail").unwrap();
+        assert_eq!(p.file_name().unwrap().to_string_lossy(), "gmail.gpg");
+    }
+
+    // pass_file — email filename: .com must NOT be replaced by .gpg
+    #[test]
+    fn pass_file_preserves_dotcom_extension() {
+        let (_dir, store) = make_store();
+        let p = store.pass_file("wise.com/user@gmail.com").unwrap();
+        assert_eq!(
+            p.file_name().unwrap().to_string_lossy(),
+            "user@gmail.com.gpg"
+        );
+    }
+
+    // pass_file — leading slash stripped (PassFF sends /keyname)
+    #[test]
+    fn pass_file_strips_leading_slash() {
+        let (_dir, store) = make_store();
+        let with_slash = store.pass_file("/email/gmail").unwrap();
+        let without = store.pass_file("email/gmail").unwrap();
+        assert_eq!(with_slash, without);
+    }
+
+    // pass_file — already has .gpg extension: no double extension
+    #[test]
+    fn pass_file_no_double_gpg() {
+        let (_dir, store) = make_store();
+        let p = store.pass_file("email/gmail.gpg").unwrap();
+        assert_eq!(p.file_name().unwrap().to_string_lossy(), "gmail.gpg");
+    }
+
+    // pass_file — directory traversal blocked
+    #[test]
+    fn pass_file_rejects_dotdot() {
+        let (_dir, store) = make_store();
+        assert!(store.pass_file("../etc/passwd").is_err());
+    }
+
+    // parse_gpg_id — basic parsing
+    #[test]
+    fn parse_gpg_id_basic() {
+        let dir = tempfile::tempdir().unwrap();
+        let f = dir.path().join(".gpg-id");
+        fs::write(&f, "keyA\nkeyB\n").unwrap();
+        let ids = parse_gpg_id(&f).unwrap();
+        assert_eq!(ids, vec!["keyA", "keyB"]);
+    }
+
+    // parse_gpg_id — strips comments and blank lines
+    #[test]
+    fn parse_gpg_id_strips_comments() {
+        let dir = tempfile::tempdir().unwrap();
+        let f = dir.path().join(".gpg-id");
+        fs::write(&f, "# comment\n\nkeyA\n").unwrap();
+        let ids = parse_gpg_id(&f).unwrap();
+        assert_eq!(ids, vec!["keyA"]);
+    }
+
+    // parse_gpg_id — empty file errors
+    #[test]
+    fn parse_gpg_id_empty_errors() {
+        let dir = tempfile::tempdir().unwrap();
+        let f = dir.path().join(".gpg-id");
+        fs::write(&f, "# only comments\n").unwrap();
+        assert!(parse_gpg_id(&f).is_err());
+    }
+
+    // recipients_for — root .gpg-id used when no subdir .gpg-id
+    #[test]
+    fn recipients_for_falls_back_to_root() {
+        let (_dir, store) = make_store();
+        let pass_path = store.root.join("email").join("gmail.gpg");
+        let ids = store.recipients_for(&pass_path).unwrap();
+        assert_eq!(ids, vec!["test@example.com"]);
+    }
+
+    // recipients_for — subdir .gpg-id takes precedence
+    #[test]
+    fn recipients_for_prefers_subdir() {
+        let (dir, store) = make_store();
+        let subdir = dir.path().join("work");
+        fs::create_dir_all(&subdir).unwrap();
+        fs::write(subdir.join(".gpg-id"), "work-key\n").unwrap();
+        let pass_path = subdir.join("secret.gpg");
+        let ids = store.recipients_for(&pass_path).unwrap();
+        assert_eq!(ids, vec!["work-key"]);
+    }
 }

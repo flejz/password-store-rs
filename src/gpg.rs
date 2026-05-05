@@ -80,11 +80,44 @@ impl Gpg {
 
 /// Wrap email-style key IDs in angle brackets so GPG resolves them correctly
 /// on all platforms (e.g. `user@example.com` → `<user@example.com>`).
-fn format_key_id(id: &str) -> String {
+pub(crate) fn format_key_id(id: &str) -> String {
     if id.contains('@') && !id.starts_with('<') {
         format!("<{}>", id)
     } else {
         id.to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn email_key_gets_angle_brackets() {
+        assert_eq!(format_key_id("user@example.com"), "<user@example.com>");
+    }
+
+    #[test]
+    fn already_bracketed_unchanged() {
+        assert_eq!(format_key_id("<user@example.com>"), "<user@example.com>");
+    }
+
+    #[test]
+    fn fingerprint_unchanged() {
+        assert_eq!(format_key_id("0xABCD1234"), "0xABCD1234");
+    }
+
+    #[test]
+    fn short_key_id_unchanged() {
+        assert_eq!(format_key_id("ABCD1234"), "ABCD1234");
+    }
+
+    #[test]
+    fn email_with_subdomain_gets_angle_brackets() {
+        assert_eq!(
+            format_key_id("jaimelopesflores@gmail.com"),
+            "<jaimelopesflores@gmail.com>"
+        );
     }
 }
 

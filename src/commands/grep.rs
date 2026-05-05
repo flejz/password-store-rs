@@ -5,10 +5,12 @@ use crate::{gpg::Gpg, store::Store};
 const BOLD: &str = "\x1b[1m";
 const RESET: &str = "\x1b[0m";
 
-pub fn run(store: &Store, gpg: &Gpg, args: &[String]) -> Result<()> {
-    store.assert_exists()?;
+pub(crate) struct GrepOpts {
+    pub case_insensitive: bool,
+    pub pattern: String,
+}
 
-    // Parse grep-style flags: -i, -E (no-op), combined -iE, -- separator, then pattern
+pub(crate) fn parse_args(args: &[String]) -> Result<GrepOpts> {
     let mut case_insensitive = false;
     let mut end_of_flags = false;
     let mut pattern: Option<&str> = None;
@@ -19,7 +21,6 @@ pub fn run(store: &Store, gpg: &Gpg, args: &[String]) -> Result<()> {
         } else if arg == "--" {
             end_of_flags = true;
         } else if arg.starts_with('-') && arg.len() > 1 && !arg.starts_with("--") {
-            // Single-dash flags, possibly combined: -iE
             for ch in arg[1..].chars() {
                 match ch {
                     'i' => case_insensitive = true,
@@ -36,12 +37,22 @@ pub fn run(store: &Store, gpg: &Gpg, args: &[String]) -> Result<()> {
         }
     }
 
-    let pattern = pattern.ok_or_else(|| anyhow::anyhow!("Usage: pass grep [-iE] <pattern>"))?;
+    let pattern = pattern
+        .ok_or_else(|| anyhow::anyhow!("Usage: pass grep [-iE] <pattern>"))?
+        .to_string();
 
-    let re = RegexBuilder::new(pattern)
-        .case_insensitive(case_insensitive)
+    Ok(GrepOpts { case_insensitive, pattern })
+}
+
+pub fn run(store: &Store, gpg: &Gpg, args: &[String]) -> Result<()> {
+    store.assert_exists()?;
+
+    let opts = parse_args(args)?;
+
+    let re = RegexBuilder::new(&opts.pattern)
+        .case_insensitive(opts.case_insensitive)
         .build()
-        .map_err(|e| anyhow::anyhow!("Invalid pattern '{}': {}", pattern, e))?;
+        .map_err(|e| anyhow::anyhow!("Invalid pattern '{}': {}", opts.pattern, e))?;
 
     let mut found = false;
 
@@ -57,7 +68,6 @@ pub fn run(store: &Store, gpg: &Gpg, args: &[String]) -> Result<()> {
             Err(_) => continue,
         };
 
-        // Normalise path separators and strip .gpg
         let display = rel.to_string_lossy()
             .replace('\\', "/")
             .trim_end_matches(".gpg")
@@ -81,9 +91,68 @@ pub fn run(store: &Store, gpg: &Gpg, args: &[String]) -> Result<()> {
     }
 
     if !found {
-        // grep exits 1 when no matches — callers (like PassFF) rely on this
         std::process::exit(1);
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn args(v: &[&str]) -> Vec<String> {
+        v.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn plain_pattern() {
+        let opts = parse_args(&args(&["url:"])).unwrap();
+        assert_eq!(opts.pattern, "url:");
+        assert!(!opts.case_insensitive);
+    }
+
+    #[test]
+    fn short_i_flag() {
+        let opts = parse_args(&args(&["-i", "url:"])).unwrap();
+        assert!(opts.case_insensitive);
+        assert_eq!(opts.pattern, "url:");
+    }
+
+    #[test]
+    fn combined_ie_flag() {
+        let opts = parse_args(&args(&["-iE", "^url:"])).unwrap();
+        assert!(opts.case_insensitive);
+        assert_eq!(opts.pattern, "^url:");
+    }
+
+    #[test]
+    fn double_dash_separator() {
+        let opts = parse_args(&args(&["-i", "--", "-not-a-flag"])).unwrap();
+        assert!(opts.case_insensitive);
+        assert_eq!(opts.pattern, "-not-a-flag");
+    }
+
+    #[test]
+    fn long_ignore_case_flag() {
+        let opts = parse_args(&args(&["--ignore-case", "URL"])).unwrap();
+        assert!(opts.case_insensitive);
+    }
+
+    #[test]
+    fn passff_style_invocation() {
+        let opts = parse_args(&args(&["-iE", "^(url|username|login):"])).unwrap();
+        assert!(opts.case_insensitive);
+        assert_eq!(opts.pattern, "^(url|username|login):");
+    }
+
+    #[test]
+    fn missing_pattern_errors() {
+        assert!(parse_args(&args(&["-i"])).is_err());
+    }
+
+    #[test]
+    fn unknown_flag_errors() {
+        assert!(parse_args(&args(&["-x", "pattern"])).is_err());
+    }
 }
