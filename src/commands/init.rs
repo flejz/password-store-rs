@@ -45,6 +45,13 @@ pub fn run(store: &Store, gpg: &Gpg, gpg_ids: &[String], path: Option<&str>) -> 
         }
     }
 
+    // Sign .gpg-id with PASSWORD_STORE_SIGNING_KEY if configured
+    if let Some(ref key) = store.signing_key {
+        gpg.sign_detach(&gpg_id_file, key)?;
+        let sig_file = target_dir.join(".gpg-id.sig");
+        store.git_commit(&sig_file, &format!("Set GPG id to {}.", gpg_ids.join(", ")));
+    }
+
     store.git_commit(&gpg_id_file, &format!("Set GPG id to {}.", gpg_ids.join(", ")));
     Ok(())
 }

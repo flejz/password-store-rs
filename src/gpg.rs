@@ -75,6 +75,25 @@ impl Gpg {
         Ok(())
     }
 
+    /// Create a detached GPG signature for `file` using `key_id`.
+    /// Produces `file.sig` alongside the original.
+    pub fn sign_detach(&self, file: &Path, key_id: &str) -> Result<()> {
+        let status = Command::new(&self.path)
+            .args([
+                "--quiet", "--yes", "--batch",
+                "--default-key", &format_key_id(key_id),
+                "--detach-sig",
+            ])
+            .arg(file)
+            .status()
+            .context("Failed to run gpg --detach-sig")?;
+
+        if !status.success() {
+            bail!("GPG signing of {} failed", file.display());
+        }
+        Ok(())
+    }
+
     pub fn key_exists(&self, key_id: &str) -> bool {
         Command::new(&self.path)
             .args(["--list-keys", &format_key_id(key_id)])
