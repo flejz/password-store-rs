@@ -50,8 +50,13 @@ fn main() -> Result<()> {
         character_set,
         character_set_no_symbols,
         store_key,
+        git_dir,
+        signing_key,
     } = Config::load()?;
-    let store = Store::open(store_dir).with_key_override(store_key);
+    let store = Store::open(store_dir)
+        .with_key_override(store_key)
+        .with_git_dir(git_dir)
+        .with_signing_key(signing_key.clone());
 
     match cli.command {
         None => commands::list::run(&store, None),

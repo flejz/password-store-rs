@@ -10,6 +10,10 @@ pub struct Config {
     pub character_set_no_symbols: Option<String>,
     /// Overrides `.gpg-id` when set ($PASSWORD_STORE_KEY)
     pub store_key: Option<Vec<String>>,
+    /// Alternative git directory ($PASSWORD_STORE_GIT)
+    pub git_dir: Option<PathBuf>,
+    /// GPG key used to sign/verify `.gpg-id` ($PASSWORD_STORE_SIGNING_KEY)
+    pub signing_key: Option<String>,
 }
 
 impl Config {
@@ -41,10 +45,13 @@ impl Config {
         let character_set_no_symbols =
             std::env::var("PASSWORD_STORE_CHARACTER_SET_NO_SYMBOLS").ok();
 
-        // Space-separated key IDs; overrides .gpg-id when set
         let store_key: Option<Vec<String>> = std::env::var("PASSWORD_STORE_KEY")
             .ok()
             .map(|s| s.split_whitespace().map(String::from).collect());
+
+        let git_dir = std::env::var("PASSWORD_STORE_GIT").ok().map(PathBuf::from);
+
+        let signing_key = std::env::var("PASSWORD_STORE_SIGNING_KEY").ok();
 
         Ok(Config {
             store_dir,
@@ -54,6 +61,8 @@ impl Config {
             character_set,
             character_set_no_symbols,
             store_key,
+            git_dir,
+            signing_key,
         })
     }
 }
