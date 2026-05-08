@@ -10,9 +10,9 @@ pass-rs aims for full behavioral compatibility with [pass](https://www.passwords
 |---|---|---|---|
 | `init` | — | ✅ | Per-subfolder `.gpg-id` supported |
 | `ls` | `list` | ✅ | ANSI tree output |
-| `show` | — | ✅ | `--clip`, `--line N`; `pass <name>` shorthand works |
+| `show` | — | ✅ | `--clip`, `--qrcode`, `--line N`; `pass <name>` shorthand works |
 | `insert` | `add` | ✅ | `--echo`, `--multiline`, `--force` |
-| `generate` | — | ✅ | `--no-symbols`, `--clip`, `--in-place`, `--force` |
+| `generate` | — | ✅ | `--no-symbols`, `--clip`, `--qrcode`, `--in-place`, `--force` |
 | `rm` | `delete`, `remove` | ✅ | `--recursive`, `--force` |
 | `find` | `search` | ✅ | Case-insensitive substring match |
 | `grep` | — | ✅ | `-i`, `-E`; used by PassFF for URL search |
@@ -67,7 +67,6 @@ A `.password-store` created with `pass` on Linux or macOS opens unchanged with p
 | Extension system | `.bash` scripts in `.extensions/` | Not implemented |
 | QR code output | `--qrcode` flag | ✅ (`pass show -q`, `pass generate -q`) |
 | GPG commit signing | `pass.signcommits` git config | ✅ |
-| `--qrcode` on generate | ✅ | ❌ |
 
 ---
 
