@@ -46,11 +46,11 @@ A `.password-store` created with `pass` on Linux or macOS opens unchanged with p
 | `PASSWORD_STORE_CLIP_TIME` | ✅ | ✅ |
 | `PASSWORD_STORE_GPG_OPTS` | ✅ | ✅ |
 | `PASSWORD_STORE_KEY` | ✅ | ✅ |
-| `PASSWORD_STORE_GIT` | ✅ | ❌ |
+| `PASSWORD_STORE_GIT` | ✅ | ✅ |
 | `PASSWORD_STORE_GENERATED_LENGTH` | ✅ | ✅ |
 | `PASSWORD_STORE_CHARACTER_SET` | ✅ | ✅ |
 | `PASSWORD_STORE_CHARACTER_SET_NO_SYMBOLS` | ✅ | ✅ |
-| `PASSWORD_STORE_SIGNING_KEY` | ✅ | ❌ |
+| `PASSWORD_STORE_SIGNING_KEY` | ✅ | ✅ |
 | `PASSWORD_STORE_ENABLE_EXTENSIONS` | ✅ | ❌ |
 
 ---
