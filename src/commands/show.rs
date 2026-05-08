@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use crate::{clipboard, gpg::Gpg, store::Store, tree};
+use crate::{clipboard, gpg::Gpg, qrcode, store::Store, tree};
 
 pub fn run(
     store: &Store,
@@ -7,6 +7,7 @@ pub fn run(
     clip_time: u64,
     name: &str,
     clip: bool,
+    show_qr: bool,
     line_num: usize,
 ) -> Result<()> {
     store.assert_exists()?;
@@ -33,20 +34,24 @@ pub fn run(
     let data = gpg.decrypt(&pass_file)?;
     let text = String::from_utf8_lossy(&data);
 
-    if clip {
+    if clip || show_qr {
         let lines: Vec<&str> = text.lines().collect();
         let idx = line_num.saturating_sub(1);
         let password = lines
             .get(idx)
             .ok_or_else(|| anyhow::anyhow!("There is no line {} in {}.", line_num, name))?;
 
-        let prev = clipboard::copy_to_clipboard(password)?;
-        clipboard::spawn_clip_clear(&prev, clip_time)?;
-
-        println!(
-            "Copied {} to clipboard. Will clear in {} seconds.",
-            name, clip_time
-        );
+        if show_qr {
+            qrcode::print_qrcode(password)?;
+        }
+        if clip {
+            let prev = clipboard::copy_to_clipboard(password)?;
+            clipboard::spawn_clip_clear(&prev, clip_time)?;
+            println!(
+                "Copied {} to clipboard. Will clear in {} seconds.",
+                name, clip_time
+            );
+        }
     } else {
         print!("{}", text);
     }

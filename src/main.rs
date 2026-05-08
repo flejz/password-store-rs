@@ -3,6 +3,7 @@ mod clipboard;
 mod commands;
 mod config;
 mod gpg;
+mod qrcode;
 mod store;
 mod tree;
 
@@ -80,21 +81,21 @@ fn main() -> Result<()> {
                     commands::init::run(&store, &gpg, &gpg_ids, path.as_deref())
                 }
 
-                Cmd::Show { name, clip, line } => {
-                    commands::show::run(&store, &gpg, clip_time, &name, clip, line)
+                Cmd::Show { name, clip, qrcode, line } => {
+                    commands::show::run(&store, &gpg, clip_time, &name, clip, qrcode, line)
                 }
 
                 Cmd::Insert { name, echo, multiline, force } => {
                     commands::insert::run(&store, &gpg, &name, echo, multiline, force)
                 }
 
-                Cmd::Generate { name, length, no_symbols, clip, in_place, force } => {
+                Cmd::Generate { name, length, no_symbols, clip, qrcode, in_place, force } => {
                     commands::generate::run(
                         &store, &gpg, clip_time,
                         generated_length,
                         character_set.as_deref(),
                         character_set_no_symbols.as_deref(),
-                        &name, length, no_symbols, clip, in_place, force,
+                        &name, length, no_symbols, clip, qrcode, in_place, force,
                     )
                 }
 

@@ -2,7 +2,7 @@ use std::fs;
 use std::io::{self, Write};
 use anyhow::{bail, Result};
 use rand::Rng;
-use crate::{clipboard, gpg::Gpg, store::Store};
+use crate::{clipboard, gpg::Gpg, qrcode, store::Store};
 
 pub fn run(
     store: &Store,
@@ -15,6 +15,7 @@ pub fn run(
     length: Option<usize>,
     no_symbols: bool,
     clip: bool,
+    show_qr: bool,
     in_place: bool,
     force: bool,
 ) -> Result<()> {
@@ -74,6 +75,9 @@ pub fn run(
     let recipients = store.recipients_for(&pass_file)?;
     gpg.encrypt(content.as_bytes(), &recipients, &pass_file)?;
 
+    if show_qr {
+        qrcode::print_qrcode(&password)?;
+    }
     if clip {
         let prev = clipboard::copy_to_clipboard(&password)?;
         clipboard::spawn_clip_clear(&prev, clip_time)?;
@@ -81,7 +85,7 @@ pub fn run(
             "Generated password for {} and copied to clipboard. Will clear in {} seconds.",
             name, clip_time
         );
-    } else {
+    } else if !show_qr {
         println!("Generated password for {}:", name);
         println!("{}", password);
     }

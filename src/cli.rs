@@ -35,7 +35,10 @@ pub enum Cmd {
         /// Copy to clipboard instead of printing
         #[arg(long, short = 'c')]
         clip: bool,
-        /// Line number to copy (default: 1)
+        /// Display as QR code
+        #[arg(long, short = 'q')]
+        qrcode: bool,
+        /// Line number to copy/encode (default: 1)
         #[arg(long, short = 'n', default_value = "1")]
         line: usize,
     },
@@ -66,6 +69,9 @@ pub enum Cmd {
         /// Copy generated password to clipboard
         #[arg(long, short = 'c')]
         clip: bool,
+        /// Display generated password as QR code
+        #[arg(long, short = 'q')]
+        qrcode: bool,
         /// Replace only the first line of an existing entry
         #[arg(long, short = 'i')]
         in_place: bool,
