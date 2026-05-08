@@ -48,8 +48,9 @@ fn main() -> Result<()> {
         generated_length,
         character_set,
         character_set_no_symbols,
+        store_key,
     } = Config::load()?;
-    let store = Store::open(store_dir);
+    let store = Store::open(store_dir).with_key_override(store_key);
 
     match cli.command {
         None => commands::list::run(&store, None),

@@ -5,11 +5,18 @@ use anyhow::{bail, Result};
 
 pub struct Store {
     pub root: PathBuf,
+    /// When set, overrides per-directory .gpg-id for all encrypt operations.
+    pub key_override: Option<Vec<String>>,
 }
 
 impl Store {
     pub fn open(root: PathBuf) -> Self {
-        Store { root }
+        Store { root, key_override: None }
+    }
+
+    pub fn with_key_override(mut self, keys: Option<Vec<String>>) -> Self {
+        self.key_override = keys;
+        self
     }
 
     pub fn assert_exists(&self) -> Result<()> {
@@ -50,6 +57,10 @@ impl Store {
 
     /// Find the GPG recipients for a given password file by walking up to store root.
     pub fn recipients_for(&self, pass_path: &Path) -> Result<Vec<String>> {
+        if let Some(keys) = &self.key_override {
+            return Ok(keys.clone());
+        }
+
         let start = if pass_path.extension().map(|e| e == "gpg").unwrap_or(false) {
             pass_path.parent().unwrap_or(pass_path)
         } else {
@@ -235,5 +246,34 @@ mod tests {
         let pass_path = subdir.join("secret.gpg");
         let ids = store.recipients_for(&pass_path).unwrap();
         assert_eq!(ids, vec!["work-key"]);
+    }
+
+    // key_override — PASSWORD_STORE_KEY overrides .gpg-id
+    #[test]
+    fn key_override_takes_precedence_over_gpg_id() {
+        let (_dir, store) = make_store();
+        let store = store.with_key_override(Some(vec!["override-key".to_string()]));
+        let pass_path = store.root.join("email").join("gmail.gpg");
+        let ids = store.recipients_for(&pass_path).unwrap();
+        assert_eq!(ids, vec!["override-key"]);
+    }
+
+    // key_override — multiple keys
+    #[test]
+    fn key_override_supports_multiple_keys() {
+        let (_dir, store) = make_store();
+        let keys = vec!["key1".to_string(), "key2".to_string()];
+        let store = store.with_key_override(Some(keys.clone()));
+        let pass_path = store.root.join("test.gpg");
+        assert_eq!(store.recipients_for(&pass_path).unwrap(), keys);
+    }
+
+    // no key_override — falls back to .gpg-id
+    #[test]
+    fn no_key_override_uses_gpg_id() {
+        let (_dir, store) = make_store();
+        let pass_path = store.root.join("test.gpg");
+        let ids = store.recipients_for(&pass_path).unwrap();
+        assert_eq!(ids, vec!["test@example.com"]);
     }
 }
