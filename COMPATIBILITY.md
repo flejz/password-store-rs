@@ -45,11 +45,11 @@ A `.password-store` created with `pass` on Linux or macOS opens unchanged with p
 | `PASSWORD_STORE_DIR` | ✅ | ✅ |
 | `PASSWORD_STORE_CLIP_TIME` | ✅ | ✅ |
 | `PASSWORD_STORE_GPG_OPTS` | ✅ | ✅ |
-| `PASSWORD_STORE_KEY` | ✅ | ❌ (use `.gpg-id` file) |
+| `PASSWORD_STORE_KEY` | ✅ | ✅ |
 | `PASSWORD_STORE_GIT` | ✅ | ❌ |
-| `PASSWORD_STORE_GENERATED_LENGTH` | ✅ | ❌ (use CLI arg) |
-| `PASSWORD_STORE_CHARACTER_SET` | ✅ | ❌ |
-| `PASSWORD_STORE_CHARACTER_SET_NO_SYMBOLS` | ✅ | ❌ |
+| `PASSWORD_STORE_GENERATED_LENGTH` | ✅ | ✅ |
+| `PASSWORD_STORE_CHARACTER_SET` | ✅ | ✅ |
+| `PASSWORD_STORE_CHARACTER_SET_NO_SYMBOLS` | ✅ | ✅ |
 | `PASSWORD_STORE_SIGNING_KEY` | ✅ | ❌ |
 | `PASSWORD_STORE_ENABLE_EXTENSIONS` | ✅ | ❌ |
 
@@ -65,8 +65,8 @@ A `.password-store` created with `pass` on Linux or macOS opens unchanged with p
 | Clipboard clear | Background shell sleep | Hidden detached subprocess |
 | Temp files for `edit` | `/dev/shm` (RAM — more secure) | `$TMPDIR` / `%TEMP%` (disk — less secure) |
 | Extension system | `.bash` scripts in `.extensions/` | Not implemented |
-| QR code output | `--qrcode` flag | Not implemented |
-| GPG commit signing | `pass.signcommits` git config | Not implemented |
+| QR code output | `--qrcode` flag | ✅ (`pass show -q`, `pass generate -q`) |
+| GPG commit signing | `pass.signcommits` git config | ✅ |
 | `--qrcode` on generate | ✅ | ❌ |
 
 ---
