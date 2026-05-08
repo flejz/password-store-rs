@@ -58,9 +58,8 @@ pub enum Cmd {
     Generate {
         /// Password name
         name: String,
-        /// Password length
-        #[arg(default_value = "25")]
-        length: usize,
+        /// Password length (default: 25 or $PASSWORD_STORE_GENERATED_LENGTH)
+        length: Option<usize>,
         /// Use only alphanumeric characters
         #[arg(long, short = 'n')]
         no_symbols: bool,

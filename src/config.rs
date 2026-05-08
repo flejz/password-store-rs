@@ -5,6 +5,9 @@ pub struct Config {
     pub store_dir: PathBuf,
     pub clip_time: u64,
     pub gpg_opts: Vec<String>,
+    pub generated_length: usize,
+    pub character_set: Option<String>,
+    pub character_set_no_symbols: Option<String>,
 }
 
 impl Config {
@@ -27,6 +30,22 @@ impl Config {
             .map(|s| s.split_whitespace().map(String::from).collect())
             .unwrap_or_default();
 
-        Ok(Config { store_dir, clip_time, gpg_opts })
+        let generated_length = std::env::var("PASSWORD_STORE_GENERATED_LENGTH")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(25usize);
+
+        let character_set = std::env::var("PASSWORD_STORE_CHARACTER_SET").ok();
+        let character_set_no_symbols =
+            std::env::var("PASSWORD_STORE_CHARACTER_SET_NO_SYMBOLS").ok();
+
+        Ok(Config {
+            store_dir,
+            clip_time,
+            gpg_opts,
+            generated_length,
+            character_set,
+            character_set_no_symbols,
+        })
     }
 }

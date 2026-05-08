@@ -41,7 +41,14 @@ fn main() -> Result<()> {
     }
 
     let cli = Cli::parse_from(&raw);
-    let config::Config { store_dir, clip_time, gpg_opts } = Config::load()?;
+    let config::Config {
+        store_dir,
+        clip_time,
+        gpg_opts,
+        generated_length,
+        character_set,
+        character_set_no_symbols,
+    } = Config::load()?;
     let store = Store::open(store_dir);
 
     match cli.command {
@@ -82,7 +89,11 @@ fn main() -> Result<()> {
 
                 Cmd::Generate { name, length, no_symbols, clip, in_place, force } => {
                     commands::generate::run(
-                        &store, &gpg, clip_time, &name, length, no_symbols, clip, in_place, force,
+                        &store, &gpg, clip_time,
+                        generated_length,
+                        character_set.as_deref(),
+                        character_set_no_symbols.as_deref(),
+                        &name, length, no_symbols, clip, in_place, force,
                     )
                 }
 

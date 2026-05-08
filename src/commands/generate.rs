@@ -8,8 +8,11 @@ pub fn run(
     store: &Store,
     gpg: &Gpg,
     clip_time: u64,
+    default_length: usize,
+    charset_override: Option<&str>,
+    charset_no_symbols_override: Option<&str>,
     name: &str,
-    length: usize,
+    length: Option<usize>,
     no_symbols: bool,
     clip: bool,
     in_place: bool,
@@ -28,12 +31,23 @@ pub fn run(
         }
     }
 
+    let length = length.unwrap_or(default_length);
+
     let charset: Vec<u8> = if no_symbols {
-        (b'0'..=b'9').chain(b'A'..=b'Z').chain(b'a'..=b'z').collect()
+        match charset_no_symbols_override {
+            Some(s) => charset_from_str(s),
+            None => (b'0'..=b'9').chain(b'A'..=b'Z').chain(b'a'..=b'z').collect(),
+        }
     } else {
-        // All printable ASCII 33–126 (excludes space)
-        (33u8..=126u8).collect()
+        match charset_override {
+            Some(s) => charset_from_str(s),
+            None => (33u8..=126u8).collect(), // all printable ASCII
+        }
     };
+
+    if charset.is_empty() {
+        bail!("Character set is empty — check PASSWORD_STORE_CHARACTER_SET");
+    }
 
     let mut rng = rand::thread_rng();
     let password: String = (0..length)
@@ -79,4 +93,69 @@ pub fn run(
     };
     store.git_commit(&pass_file, &msg);
     Ok(())
+}
+
+/// Build a charset from a literal string, keeping only printable ASCII.
+pub(crate) fn charset_from_str(s: &str) -> Vec<u8> {
+    let mut seen = std::collections::HashSet::new();
+    s.chars()
+        .filter(|c| c.is_ascii_graphic())
+        .map(|c| c as u8)
+        .filter(|b| seen.insert(*b))
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_charset_all_printable_ascii() {
+        let cs: Vec<u8> = (33u8..=126u8).collect();
+        assert_eq!(cs.len(), 94);
+        assert!(cs.contains(&b'!'));
+        assert!(cs.contains(&b'z'));
+        assert!(!cs.contains(&b' '));
+    }
+
+    #[test]
+    fn no_symbols_charset_alphanumeric_only() {
+        let cs: Vec<u8> = (b'0'..=b'9').chain(b'A'..=b'Z').chain(b'a'..=b'z').collect();
+        assert_eq!(cs.len(), 62);
+        assert!(!cs.contains(&b'!'));
+        assert!(cs.contains(&b'a'));
+    }
+
+    #[test]
+    fn charset_from_str_deduplicates() {
+        let cs = charset_from_str("aabbcc");
+        assert_eq!(cs, vec![b'a', b'b', b'c']);
+    }
+
+    #[test]
+    fn charset_from_str_strips_non_printable() {
+        let cs = charset_from_str("ab\x00\x01cd");
+        assert_eq!(cs, vec![b'a', b'b', b'c', b'd']);
+    }
+
+    #[test]
+    fn charset_from_str_strips_spaces() {
+        let cs = charset_from_str("a b c");
+        assert_eq!(cs, vec![b'a', b'b', b'c']);
+    }
+
+    #[test]
+    fn generated_length_default_is_25() {
+        // If no CLI arg and no env var, length resolves to 25
+        let length: Option<usize> = None;
+        let default_length = 25usize;
+        assert_eq!(length.unwrap_or(default_length), 25);
+    }
+
+    #[test]
+    fn cli_length_overrides_default() {
+        let length: Option<usize> = Some(16);
+        let default_length = 25usize;
+        assert_eq!(length.unwrap_or(default_length), 16);
+    }
 }
