@@ -118,9 +118,20 @@ impl Store {
                 .status();
         }
 
-        let _ = Command::new("git")
-            .args(["-C", store_str, "commit", "-m", message])
-            .status();
+        // Respect `git config pass.signcommits true` — sign commits with GPG
+        let sign = Command::new("git")
+            .args(["-C", store_str, "config", "--local", "pass.signcommits"])
+            .output()
+            .map(|o| String::from_utf8_lossy(&o.stdout).trim() == "true")
+            .unwrap_or(false);
+
+        let mut commit_args = vec!["-C", store_str, "commit"];
+        if sign {
+            commit_args.push("-S");
+        }
+        commit_args.extend(["-m", message]);
+
+        let _ = Command::new("git").args(&commit_args).status();
     }
 }
 
@@ -275,5 +286,14 @@ mod tests {
         let pass_path = store.root.join("test.gpg");
         let ids = store.recipients_for(&pass_path).unwrap();
         assert_eq!(ids, vec!["test@example.com"]);
+    }
+
+    // git_commit is a no-op when no .git directory exists (no panic)
+    #[test]
+    fn git_commit_no_op_without_git_dir() {
+        let (_dir, store) = make_store();
+        let path = store.root.join("test.gpg");
+        // Should not panic or error
+        store.git_commit(&path, "Test commit.");
     }
 }
